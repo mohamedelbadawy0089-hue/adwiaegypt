@@ -19,13 +19,13 @@
 <body>
 
 <div class="container">
-    <h2>🔍 البحث في مخازن أدويا</h2>
-    <input type="text" id="searchInput" placeholder="ابحث عن دواء..." oninput="searchInCloud(this.value)">
+    <h2>🔍 البحث في مخازن أدويا مصر</h2>
+    <input type="text" id="searchInput" placeholder="ابحث عن دواء في السحابة..." oninput="searchInCloud(this.value)">
     <div id="results"></div>
 
     <hr>
 
-    <h3>📦 إضافة دواء جديد للمخزن</h3>
+    <h3>📦 إضافة دواء جديد للمخازن</h3>
     <input type="text" id="dName" placeholder="اسم الدواء">
     <input type="number" id="dPrice" placeholder="السعر">
     <select id="dStore">
@@ -40,41 +40,44 @@
 </div>
 
 <script>
-    // --- بيانات الربط الخاصة بك ---
+    // --- بيانات الربط من واقع صورك ---
     const S_URL = 'https://iksjhjxwhmvthryfeae.supabase.co'; 
-    const S_KEY = 'Sb_publishable_ODUy2mtXS6m5S8PwTDAAN...'; // ضع المفتاح الطويل هنا
+    const S_KEY = 'ضع_هنا_مفتاح_anon_key_الخاص_بك'; 
     // ----------------------------
 
     const _supabase = supabase.createClient(S_URL, S_KEY);
 
+    // وظيفة البحث السحابي المدمجة
     async function searchInCloud(query) {
         const div = document.getElementById('results');
         if (query.length < 2) { div.innerHTML = ""; return; }
         const { data } = await _supabase.from('drugs').select('*').ilike('name', `%${query}%`);
         if (data && data.length > 0) {
-            div.innerHTML = data.map(d => `<div class="item"><b>💊 ${d.name}</b> | <b>💰 ${d.price} ج.م</b><br><small>🏬 المكان: ${d.store_name}</small></div>`).join('');
-        } else { div.innerHTML = "<p>غير موجود في المخزن.</p>"; }
+            div.innerHTML = data.map(d => `<div class="item"><b>💊 ${d.name}</b> | <b>💰 ${d.price} ج.م</b><br><small>🏬 المخزن: ${d.store_name}</small></div>`).join('');
+        } else { div.innerHTML = "<p>عذراً، هذا الدواء غير مسجل في مخازنك.</p>"; }
     }
 
+    // وظيفة الحفظ في المخزن
     async function saveToCloud() {
         const n = document.getElementById('dName').value;
         const p = document.getElementById('dPrice').value;
         const s = document.getElementById('dStore').value;
-        if (!n || !p) { alert("أكمل البيانات"); return; }
+        if (!n || !p) { alert("من فضلك أكمل بيانات الدواء أولاً"); return; }
         const { error } = await _supabase.from('drugs').insert([{ name: n, price: p, store_name: s }]);
         if (!error) { 
-            alert("تم الحفظ بنجاح!"); 
+            alert("تم الحفظ بنجاح في السحابة!"); 
             document.getElementById('dName').value = ""; 
             document.getElementById('dPrice').value = ""; 
         }
     }
 
+    // وظيفة المسح الشامل (Nuke)
     async function nukeAll() {
-        if (confirm("هل تريد مسح كل الأدوية من المتجر فعلياً؟")) {
+        if (confirm("تحذير: هل تريد مسح كل الأدوية من المتجر فعلياً؟")) {
             const { error } = await _supabase.from('drugs').delete().neq('id', 0);
-            if (!error) { alert("تم تنظيف المتجر."); location.reload(); }
+            if (!error) { alert("تم تنظيف المتجر بالكامل."); location.reload(); }
         }
     }
 </script>
 </body>
-</html>
+</html
