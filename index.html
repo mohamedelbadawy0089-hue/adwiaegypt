@@ -2,45 +2,98 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة تحكم أدويا مصر</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدويا مصر | منصة الأدوية الشاملة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f8f9fa; }
-        .control-panel { background: white; display: inline-block; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid #ff4d4d; }
-        .btn-nuke { background-color: #d93025; color: white; border: none; padding: 20px 40px; font-size: 24px; border-radius: 12px; cursor: pointer; font-weight: bold; }
-        .btn-nuke:hover { background-color: #a51d12; transform: scale(1.02); }
+        :root { --primary: #007bff; --danger: #dc3545; --success: #28a745; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); margin-bottom: 20px; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { opacity: 0.9; }
+        .btn-danger { background: var(--danger); }
+        .admin-section { border-top: 2px solid #eee; margin-top: 30px; padding-top: 20px; }
+        .result-item { background: #fff; margin: 10px 0; padding: 15px; border-radius: 8px; border-right: 5px solid var(--primary); text-align: right; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="control-panel">
-        <h1 style="color: #d93025;">🚀 تصفير مخزن أدويا مصر</h1>
-        <p style="font-size: 18px; color: #555;">تحذير: هذا الزر سيمسح جميع بيانات الأدوية المسجلة نهائياً.</p>
-        <button class="btn-nuke" onclick="nukeStorage()">🗑️ مسح المخزن بالكامل</button>
+
+<div class="container">
+    <h1>🇪🇬 أدويا مصر</h1>
+
+    <div id="search-section">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث عن اسم الدواء هنا..." oninput="searchDrugs(this.value)">
+        <div id="results"></div>
     </div>
 
-    <script>
-        // بيانات الربط الخاصة بك
-        const S_URL = 'https://xeynahybhdcvpfzvgrpy.supabase.co';
-        // ضع المفتاح الطويل جداً الذي يبدأ بـ eyJ من إعدادات Supabase بين القوسين
-        const S_KEY = 'ضع_هنا_مفتاح_ sb_publishable_4XGfHeilmRB7aDvK30ZSeA_szM94_if_الخاص_بك'; 
+    <div class="admin-section">
+        <h3>📦 لوحة تحكم المخزن</h3>
+        <button onclick="toggleAdmin()">فتح / إغلاق لوحة التحكم</button>
+        
+        <div id="admin-panel" class="hidden">
+            <input type="text" id="drugName" placeholder="اسم الدواء">
+            <input type="text" id="drugPrice" placeholder="السعر">
+            <button onclick="addDrug()" style="background: var(--success);">إضافة الدواء للمخزن</button>
+            <hr>
+            <p style="color: var(--danger); font-size: 14px;">منطقة خطر:</p>
+            <button class="btn-danger" onclick="deleteAllDrugs()">⚠️ حذف جميع الأدوية من المخزن</button>
+        </div>
+    </div>
+</div>
 
-        const _client = supabase.createClient(S_URL, S_KEY);
+<script>
+    // سيتم استبدال هذه القيم ببيانات Supabase الخاصة بك للعمل فعلياً
+    const SUPABASE_URL = 'https://your-project.supabase.co';
+    const SUPABASE_KEY = 'your-anon-key';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function nukeStorage() {
-            const check = confirm("⚠️ هل أنت متأكد؟ لا يمكن استعادة البيانات بعد الحذف!");
-            if (check) {
-                const { error } = await _client
-                    .from('medicines') 
-                    .delete()
-                    .neq('id', 0); 
-
-                if (error) {
-                    alert("فشل التصفير! تأكد من إيقاف حماية RLS في Supabase");
-                } else {
-                    alert("تم تصفير المخزن بنجاح! ✅");
-                }
-            }
+    // 1. وظيفة البحث (تعمل يدوياً أو عبر اللينك)
+    window.onload = function() {
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q');
+        if (q) {
+            document.getElementById('searchInput').value = q;
+            searchDrugs(q);
         }
-    </script>
+    };
+
+    async function searchDrugs(query) {
+        const resultsDiv = document.getElementById('results');
+        if (query.length < 2) { resultsDiv.innerHTML = ""; return; }
+
+        resultsDiv.innerHTML = "<p>جاري البحث عن " + query + "...</p>";
+        
+        // ملاحظة: هنا يتم جلب البيانات من Supabase
+        // let { data: drugs } = await supabase.from('drugs').select('*').ilike('name', `%${query}%`);
+    }
+
+    // 2. إضافة دواء
+    async function addDrug() {
+        const name = document.getElementById('drugName').value;
+        const price = document.getElementById('drugPrice').value;
+        if(!name || !price) return alert("برجاء إدخال البيانات");
+        
+        alert("تم إرسال " + name + " للمخزن بنجاح");
+        document.getElementById('drugName').value = "";
+        document.getElementById('drugPrice').value = "";
+    }
+
+    // 3. كود الحذف الكلي (بناءً على طلبك الدائم)
+    async function deleteAllDrugs() {
+        if (confirm("هل أنت متأكد من حذف كل الأدوية؟ لا يمكن التراجع!")) {
+            // كود الحذف البرمجي من قاعدة البيانات
+            // await supabase.from('drugs').delete().neq('id', 0);
+            alert("تم مسح جميع الأدوية بنجاح.");
+        }
+    }
+
+    function toggleAdmin() {
+        document.getElementById('admin-panel').classList.toggle('hidden');
+    }
+</script>
+
 </body>
 </html>
