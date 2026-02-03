@@ -3,54 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدويا مصر | منصة الأدوية الشاملة</title>
+    <title>منصة أدويا مصر | الاحترافية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #007bff; --danger: #dc3545; --success: #28a745; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; text-align: center; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: var(--primary); margin-bottom: 20px; }
-        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { opacity: 0.9; }
-        .btn-danger { background: var(--danger); }
-        .admin-section { border-top: 2px solid #eee; margin-top: 30px; padding-top: 20px; }
-        .result-item { background: #fff; margin: 10px 0; padding: 15px; border-radius: 8px; border-right: 5px solid var(--primary); text-align: right; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .hidden { display: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; color: #333; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #007bff; margin-bottom: 20px; }
+        input { width: 90%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 2px solid #eee; font-size: 16px; transition: 0.3s; }
+        input:focus { border-color: #007bff; outline: none; }
+        .btn { background-color: #007bff; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; margin: 5px; }
+        .btn-danger { background-color: #dc3545; }
+        .result-item { background: #fff; padding: 20px; margin-top: 15px; border-radius: 12px; border-right: 6px solid #007bff; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: right; }
+        .admin-panel { margin-top: 40px; padding-top: 20px; border-top: 2px dashed #ddd; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🇪🇬 أدويا مصر</h1>
+    <h1>🔍 أدويا مصر - البحث الذكي</h1>
+    
+    <input type="text" id="searchInput" placeholder="ابحث باسم الدواء (أو استخدم اللينك مباشرة)..." oninput="searchDrugs(this.value)">
+    <div id="results"></div>
 
-    <div id="search-section">
-        <input type="text" id="searchInput" placeholder="🔍 ابحث عن اسم الدواء هنا..." oninput="searchDrugs(this.value)">
-        <div id="results"></div>
-    </div>
-
-    <div class="admin-section">
-        <h3>📦 لوحة تحكم المخزن</h3>
-        <button onclick="toggleAdmin()">فتح / إغلاق لوحة التحكم</button>
-        
-        <div id="admin-panel" class="hidden">
-            <input type="text" id="drugName" placeholder="اسم الدواء">
-            <input type="text" id="drugPrice" placeholder="السعر">
-            <button onclick="addDrug()" style="background: var(--success);">إضافة الدواء للمخزن</button>
-            <hr>
-            <p style="color: var(--danger); font-size: 14px;">منطقة خطر:</p>
-            <button class="btn-danger" onclick="deleteAllDrugs()">⚠️ حذف جميع الأدوية من المخزن</button>
-        </div>
+    <div class="admin-panel">
+        <h3>📦 لوحة التحكم (إضافة للمخزن)</h3>
+        <input type="text" id="drugName" placeholder="اسم الدواء">
+        <input type="number" id="drugPrice" placeholder="السعر">
+        <button class="btn" onclick="addDrug()">إضافة الدواء للسحابة</button>
+        <br><br>
+        <button class="btn btn-danger" onclick="nukeAllDrugs()">⚠️ مسح كافة الأدوية من المتجر</button>
     </div>
 </div>
 
 <script>
-    // سيتم استبدال هذه القيم ببيانات Supabase الخاصة بك للعمل فعلياً
-    const SUPABASE_URL = 'https://your-project.supabase.co';
-    const SUPABASE_KEY = 'your-anon-key';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // --- إعدادات Supabase (ضع بياناتك هنا) ---
+    const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co'; // استبدله بـ URL الخاص بك
+    const SUPABASE_KEY = 'YOUR_ANON_KEY'; // استبدله بـ Key الخاص بك
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 1. وظيفة البحث (تعمل يدوياً أو عبر اللينك)
+    // 1. وظيفة البحث (تعمل يدوياً أو عبر اللينك ?q=)
+    async function searchDrugs(query) {
+        const resultsDiv = document.getElementById('results');
+        if (query.length < 2) { resultsDiv.innerHTML = ""; return; }
+
+        const { data, error } = await _supabase
+            .from('drugs')
+            .select('*')
+            .ilike('name', `%${query}%`);
+
+        if (data && data.length > 0) {
+            resultsDiv.innerHTML = data.map(d => `
+                <div class="result-item">
+                    <strong>💊 الدواء:</strong> ${d.name} <br>
+                    <strong>💰 السعر:</strong> ${d.price} جنيه
+                </div>
+            `).join('');
+        } else {
+            resultsDiv.innerHTML = "<p>لا توجد نتائج مطابقة.</p>";
+        }
+    }
+
+    // 2. وظيفة إضافة دواء جديد
+    async function addDrug() {
+        const name = document.getElementById('drugName').value;
+        const price = document.getElementById('drugPrice').value;
+
+        if (!name || !price) { alert("من فضلك املأ البيانات"); return; }
+
+        const { error } = await _supabase
+            .from('drugs')
+            .insert([{ name, price }]);
+
+        if (!error) {
+            alert("تمت الإضافة بنجاح!");
+            document.getElementById('drugName').value = "";
+            document.getElementById('drugPrice').value = "";
+        } else {
+            alert("خطأ في الإضافة: " + error.message);
+        }
+    }
+
+    // 3. وظيفة المسح الشامل (بناءً على طلبك: Delete all drugs every time)
+    async function nukeAllDrugs() {
+        if (confirm("هل أنت متأكد من مسح كافة الأدوية؟ لا يمكن التراجع!")) {
+            const { error } = await _supabase
+                .from('drugs')
+                .delete()
+                .neq('id', 0); // شرط لمسح كل الصفوف
+
+            if (!error) {
+                alert("تم تنظيف المتجر بالكامل بنجاح.");
+                location.reload();
+            } else {
+                alert("حدث خطأ أثناء المسح.");
+            }
+        }
+    }
+
+    // 4. تفعيل البحث التلقائي من اللينك
     window.onload = function() {
         const params = new URLSearchParams(window.location.search);
         const q = params.get('q');
@@ -59,40 +109,6 @@
             searchDrugs(q);
         }
     };
-
-    async function searchDrugs(query) {
-        const resultsDiv = document.getElementById('results');
-        if (query.length < 2) { resultsDiv.innerHTML = ""; return; }
-
-        resultsDiv.innerHTML = "<p>جاري البحث عن " + query + "...</p>";
-        
-        // ملاحظة: هنا يتم جلب البيانات من Supabase
-        // let { data: drugs } = await supabase.from('drugs').select('*').ilike('name', `%${query}%`);
-    }
-
-    // 2. إضافة دواء
-    async function addDrug() {
-        const name = document.getElementById('drugName').value;
-        const price = document.getElementById('drugPrice').value;
-        if(!name || !price) return alert("برجاء إدخال البيانات");
-        
-        alert("تم إرسال " + name + " للمخزن بنجاح");
-        document.getElementById('drugName').value = "";
-        document.getElementById('drugPrice').value = "";
-    }
-
-    // 3. كود الحذف الكلي (بناءً على طلبك الدائم)
-    async function deleteAllDrugs() {
-        if (confirm("هل أنت متأكد من حذف كل الأدوية؟ لا يمكن التراجع!")) {
-            // كود الحذف البرمجي من قاعدة البيانات
-            // await supabase.from('drugs').delete().neq('id', 0);
-            alert("تم مسح جميع الأدوية بنجاح.");
-        }
-    }
-
-    function toggleAdmin() {
-        document.getElementById('admin-panel').classList.toggle('hidden');
-    }
 </script>
 
 </body>
