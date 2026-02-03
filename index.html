@@ -3,61 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة أدويا مصر | المخازن والبحث الداخلي</title>
+    <title>منصة أدويا مصر | الإدارة السحابية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 15px; text-align: center; }
-        .box { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        input, select { width: 90%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
-        .btn { background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 95%; font-weight: bold; }
-        .btn-danger { background: #dc3545; margin-top: 25px; font-size: 14px; padding: 8px 20px; }
-        .item { background: #fff; padding: 15px; margin-top: 10px; border-radius: 10px; border-right: 6px solid #007bff; text-align: right; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        :root { --primary: #007bff; --danger: #dc3545; --success: #28a745; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; text-align: center; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-danger { background: var(--danger); margin-top: 40px; font-size: 14px; padding: 10px 20px; border-radius: 10px; color: white; border: none; cursor: pointer; }
+        .item { background: #fff; padding: 15px; margin-top: 12px; border-radius: 12px; border-right: 8px solid var(--primary); text-align: right; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        hr { margin: 30px 0; border: 0; border-top: 1px dashed #ccc; }
     </style>
 </head>
 <body>
-<div class="box">
-    <h2>🔍 البحث الداخلي في المتجر</h2>
-    <input type="text" id="searchInput" placeholder="ابحث في مخازنك..." oninput="internalSearch(this.value)">
+
+<div class="container">
+    <h2>🔍 البحث في مخازن أدويا</h2>
+    <input type="text" id="searchInput" placeholder="ابحث عن دواء..." oninput="searchInCloud(this.value)">
     <div id="results"></div>
-    <hr style="margin:30px 0; border:1px dashed #eee">
-    <h3>📦 إضافة دواء للمخزن</h3>
+
+    <hr>
+
+    <h3>📦 إضافة دواء جديد للمخزن</h3>
     <input type="text" id="dName" placeholder="اسم الدواء">
     <input type="number" id="dPrice" placeholder="السعر">
     <select id="dStore">
         <option value="المخزن الرئيسي">المخزن الرئيسي</option>
         <option value="فرع القاهرة">فرع القاهرة</option>
+        <option value="المخزن السحابي">المخزن السحابي</option>
     </select>
-    <button class="btn" onclick="saveToSupabase()">حفظ في السحابة</button>
+    <button class="btn" onclick="saveToCloud()">حفظ في السحابة</button>
+
+    <br>
     <button class="btn btn-danger" onclick="nukeAll()">⚠️ مسح كافة محتويات المتجر</button>
 </div>
+
 <script>
-    // استبدل القيم التالية ببيانات Supabase الخاصة بك لتعمل القاعدة
-    const S_URL = 'https://YOUR_PROJECT_URL.supabase.co'; 
-    const S_KEY = 'YOUR_ANON_KEY';
+    // بيانات الربط التي أرسلتها يا دكتور محمد (تم وضعها بدقة)
+    const S_URL = 'https://iksjhjxwphmvthryfeae.supabase.co'; 
+    const S_KEY = 'Sb_publishable_0DUy2mtXS6m5S8PwTDAANQ_XWlzbu0G';
+
     const _supabase = supabase.createClient(S_URL, S_KEY);
 
-    async function internalSearch(q) {
+    async function searchInCloud(query) {
         const div = document.getElementById('results');
-        if (q.length < 2) { div.innerHTML = ""; return; }
-        const { data } = await _supabase.from('drugs').select('*').ilike('name', `%${q}%`);
+        if (query.length < 2) { div.innerHTML = ""; return; }
+        const { data } = await _supabase.from('drugs').select('*').ilike('name', `%${query}%`);
         if (data && data.length > 0) {
-            div.innerHTML = data.map(d => `<div class="item"><b>💊 ${d.name}</b> | <b>💰 ${d.price} ج.م</b><br><small>🏬 المخزن: ${d.store_name}</small></div>`).join('');
-        } else { div.innerHTML = "<p>غير موجود في متجرك.</p>"; }
+            div.innerHTML = data.map(d => `<div class="item"><b>💊 ${d.name}</b> | <b>💰 ${d.price} ج.م</b><br><small>🏬 المكان: ${d.store_name}</small></div>`).join('');
+        } else { div.innerHTML = "<p>غير موجود في المخزن.</p>"; }
     }
 
-    async function saveToSupabase() {
+    async function saveToCloud() {
         const n = document.getElementById('dName').value;
         const p = document.getElementById('dPrice').value;
         const s = document.getElementById('dStore').value;
         if (!n || !p) { alert("أكمل البيانات"); return; }
         const { error } = await _supabase.from('drugs').insert([{ name: n, price: p, store_name: s }]);
-        if (!error) { alert("تم الحفظ!"); location.reload(); }
+        if (!error) { 
+            alert("تم الحفظ بنجاح!"); 
+            document.getElementById('dName').value = ""; 
+            document.getElementById('dPrice').value = ""; 
+        } else {
+            alert("خطأ في الاتصال: تأكد من تفعيل الجدول في Supabase");
+        }
     }
 
     async function nukeAll() {
-        if (confirm("سيتم تفريغ المتجر نهائياً، هل أنت متأكد؟")) {
-            await _supabase.from('drugs').delete().neq('id', 0);
-            location.reload();
+        if (confirm("هل تريد مسح كل الأدوية من المتجر فعلياً؟")) {
+            const { error } = await _supabase.from('drugs').delete().neq('id', 0);
+            if (!error) { alert("تم تنظيف المتجر بالكامل."); location.reload(); }
         }
     }
 </script>
