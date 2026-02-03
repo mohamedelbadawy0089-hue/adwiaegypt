@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم أدويا مصر</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f8f9fa; }
+        .control-panel { background: white; display: inline-block; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 2px solid #ff4d4d; }
+        .btn-nuke { background-color: #d93025; color: white; border: none; padding: 20px 40px; font-size: 24px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+        .btn-nuke:hover { background-color: #a51d12; transform: scale(1.02); }
+    </style>
+</head>
+<body>
+    <div class="control-panel">
+        <h1 style="color: #d93025;">🚀 تصفير مخزن أدويا مصر</h1>
+        <p style="font-size: 18px; color: #555;">تحذير: هذا الزر سيمسح جميع بيانات الأدوية المسجلة نهائياً.</p>
+        <button class="btn-nuke" onclick="nukeStorage()">🗑️ مسح المخزن بالكامل</button>
+    </div>
+
+    <script>
+        // بيانات الربط الخاصة بك
+        const S_URL = 'https://xeynahybhdcvpfzvgrpy.supabase.co';
+        // ضع المفتاح الطويل جداً الذي يبدأ بـ eyJ من إعدادات Supabase بين القوسين
+        const S_KEY = 'ضع_هنا_مفتاح_ sb_publishable_4XGfHeilmRB7aDvK30ZSeA_szM94_if_الخاص_بك'; 
+
+        const _client = supabase.createClient(S_URL, S_KEY);
+
+        async function nukeStorage() {
+            const check = confirm("⚠️ هل أنت متأكد؟ لا يمكن استعادة البيانات بعد الحذف!");
+            if (check) {
+                const { error } = await _client
+                    .from('medicines') 
+                    .delete()
+                    .neq('id', 0); 
+
+                if (error) {
+                    alert("فشل التصفير! تأكد من إيقاف حماية RLS في Supabase");
+                } else {
+                    alert("تم تصفير المخزن بنجاح! ✅");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
