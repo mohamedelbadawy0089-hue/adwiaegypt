@@ -31,7 +31,7 @@
     <select id="dStore">
         <option value="المخزن الرئيسي">المخزن الرئيسي</option>
         <option value="فرع القاهرة">فرع القاهرة</option>
-        <option value="المخزن السحابي">المخزن السحابي</option>
+        <option value="فرع الإسكندرية">فرع الإسكندرية</option>
     </select>
     <button class="btn" onclick="saveToCloud()">حفظ في السحابة</button>
 
@@ -40,9 +40,10 @@
 </div>
 
 <script>
-    // بيانات الربط التي أرسلتها يا دكتور محمد (تم وضعها بدقة)
-    const S_URL = 'https://iksjhjxwphmvthryfeae.supabase.co'; 
-    const S_KEY = 'Sb_publishable_0DUy2mtXS6m5S8PwTDAANQ_XWlzbu0G';
+    // --- بيانات الربط الخاصة بك ---
+    const S_URL = 'https://iksjhjxwhmvthryfeae.supabase.co'; 
+    const S_KEY = 'Sb_publishable_ODUy2mtXS6m5S8PwTDAAN...'; // ضع المفتاح الطويل هنا
+    // ----------------------------
 
     const _supabase = supabase.createClient(S_URL, S_KEY);
 
@@ -65,15 +66,13 @@
             alert("تم الحفظ بنجاح!"); 
             document.getElementById('dName').value = ""; 
             document.getElementById('dPrice').value = ""; 
-        } else {
-            alert("خطأ في الاتصال: تأكد من تفعيل الجدول في Supabase");
         }
     }
 
     async function nukeAll() {
         if (confirm("هل تريد مسح كل الأدوية من المتجر فعلياً؟")) {
             const { error } = await _supabase.from('drugs').delete().neq('id', 0);
-            if (!error) { alert("تم تنظيف المتجر بالكامل."); location.reload(); }
+            if (!error) { alert("تم تنظيف المتجر."); location.reload(); }
         }
     }
 </script>
