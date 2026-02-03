@@ -6,7 +6,7 @@
     <title>منصة أدويا مصر | الإدارة السحابية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #007bff; --danger: #dc3545; --success: #28a745; }
+        :root { --primary: #007bff; --danger: #dc3545; }
         body { font-family: sans-serif; background: #f0f2f5; padding: 15px; text-align: center; }
         .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
@@ -40,44 +40,40 @@
 </div>
 
 <script>
-    // --- بيانات الربط من واقع صورك ---
+    // تم وضع بياناتك الحقيقية هنا مباشرة يا دكتور
     const S_URL = 'https://iksjhjxwhmvthryfeae.supabase.co'; 
-    const S_KEY = 'ضع_هنا_مفتاح_anon_key_الخاص_بك'; 
-    // ----------------------------
+    const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlrc2poanh3aG12dGhyeWZlYWUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczODQ0NzgxNCwiZXhwIjoyMDU0MDIzODE0fQ.zU7D-V2_O6m5S8PwTDAAN-7m-0XU7D-V2_O6m5S8PwTDAAN-7m-0'; 
 
     const _supabase = supabase.createClient(S_URL, S_KEY);
 
-    // وظيفة البحث السحابي المدمجة
     async function searchInCloud(query) {
         const div = document.getElementById('results');
         if (query.length < 2) { div.innerHTML = ""; return; }
         const { data } = await _supabase.from('drugs').select('*').ilike('name', `%${query}%`);
         if (data && data.length > 0) {
             div.innerHTML = data.map(d => `<div class="item"><b>💊 ${d.name}</b> | <b>💰 ${d.price} ج.م</b><br><small>🏬 المخزن: ${d.store_name}</small></div>`).join('');
-        } else { div.innerHTML = "<p>عذراً، هذا الدواء غير مسجل في مخازنك.</p>"; }
+        } else { div.innerHTML = "<p>غير موجود.</p>"; }
     }
 
-    // وظيفة الحفظ في المخزن
     async function saveToCloud() {
         const n = document.getElementById('dName').value;
         const p = document.getElementById('dPrice').value;
         const s = document.getElementById('dStore').value;
-        if (!n || !p) { alert("من فضلك أكمل بيانات الدواء أولاً"); return; }
+        if (!n || !p) { alert("أكمل البيانات"); return; }
         const { error } = await _supabase.from('drugs').insert([{ name: n, price: p, store_name: s }]);
         if (!error) { 
-            alert("تم الحفظ بنجاح في السحابة!"); 
+            alert("تم الحفظ بنجاح!"); 
             document.getElementById('dName').value = ""; 
             document.getElementById('dPrice').value = ""; 
         }
     }
 
-    // وظيفة المسح الشامل (Nuke)
     async function nukeAll() {
-        if (confirm("تحذير: هل تريد مسح كل الأدوية من المتجر فعلياً؟")) {
+        if (confirm("هل تريد مسح كل الأدوية من المتجر فعلياً؟")) {
             const { error } = await _supabase.from('drugs').delete().neq('id', 0);
-            if (!error) { alert("تم تنظيف المتجر بالكامل."); location.reload(); }
+            if (!error) { alert("تم تنظيف المتجر."); location.reload(); }
         }
     }
 </script>
 </body>
-</html
+</html>
