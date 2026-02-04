@@ -1,53 +1,87 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدويا مصر 🇪🇬</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        /* التنسيق المستوحى من صورتك الأولى */
-        body { font-family: sans-serif; text-align: center; background-color: #f4f7f6; padding: 20px; }
-        h1 { color: #0070f3; margin-bottom: 10px; }
-        .sub-title { color: #555; margin-bottom: 30px; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        .btn-danger { background-color: #ff4d4d; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 50px; font-weight: bold; }
-    </style>
-</head>
-<body>
+"use client"; // ضروري لاستخدام أزرار البحث والحذف
 
-    <div class="card">
-        <h1>مرحباً بكم في أدويا مصر 🇪🇬</h1>
-        <p class="sub-title">المتجر الرسمي للصيدليات والمخازن</p>
-        
-        <div id="drugs-list">جاري تحميل الأدوية...</div>
+import { createClient } from '@supabase/supabase-js';
+import { useState } from 'react';
 
-        <button class="btn-danger" onclick="wipeData()">مسح كافة الأدوية (Admin)</button>
+// إعداد الاتصال باستخدام المفاتيح التي أضفتها في Vercel
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+export default function MedicinePlatform() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+
+  // 1. وظيفة البحث والمقارنة (تجلب أرخص سعر وأعلى خصم من 1000 مخزن)
+  const handleSearch = async () => {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select(`
+        price, 
+        discount_percent, 
+        warehouses (name, city), 
+        products (product_name)
+      `)
+      .ilike('products.product_name', `%${searchTerm}%`)
+      .order('discount_percent', { ascending: false }); // ترتيب بالأعلى خصماً أولاً
+
+    if (!error && data) setResults(data);
+  };
+
+  // 2. وظيفة حذف جميع الأدوية (طلبك المتكرر للتصفير)
+  const clearAllData = async () => {
+    const confirmDelete = confirm("⚠️ تحذير: هل تريد فعلاً مسح كافة الأدوية من جميع المخازن؟");
+    if (confirmDelete) {
+      const { error } = await supabase
+        .from('inventory')
+        .delete()
+        .neq('id', 0); // حذف كافة السجلات
+      
+      if (!error) {
+        alert("تم تصفير جميع المنتجات بنجاح.");
+        setResults([]);
+      }
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+      <h1>منصة ربط الصيدليات بالمخازن</h1>
+      
+      {/* قسم البحث */}
+      <div style={{ marginBottom: '30px' }}>
+        <input 
+          type="text" 
+          placeholder="ابحث عن اسم الدواء..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ padding: '10px', width: '300px', color: 'black' }}
+        />
+        <button onClick={handleSearch} style={{ padding: '10px', marginLeft: '10px' }}>بحث</button>
+      </div>
+
+      {/* قسم النتائج */}
+      <div style={{ border: '1px solid #ccc', padding: '10px' }}>
+        <h2>أفضل العروض المتاحة:</h2>
+        {results.map((item, index) => (
+          <div key={index} style={{ borderBottom: '1px solid #eee', padding: '10px' }}>
+            <strong>الدواء:</strong> {item.products?.product_name} <br/>
+            <strong>المخزن:</strong> {item.warehouses?.name} ({item.warehouses?.city}) <br/>
+            <strong>السعر:</strong> {item.price} | <strong>الخصم:</strong> %{item.discount_percent}
+          </div>
+        ))}
+      </div>
+
+      {/* زر الإدارة للحذف الشامل */}
+      <div style={{ marginTop: '50px' }}>
+        <button 
+          onClick={clearAllData} 
+          style={{ backgroundColor: 'red', color: 'white', padding: '10px' }}
+        >
+          🗑️ تصفير كافة الأدوية (إدارة)
+        </button>
+      </div>
     </div>
-
-    <script>
-        // بيانات السحابة من صورتك الثانية
-        const supabaseUrl = 'https://iksjhjxwhmvthryfeae.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // كمل المفتاح الموجود في صورتك
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // وظيفة المسح المترجمة في صورتك
-        async function wipeData() {
-            const shifra = prompt("كود المسح:");
-            if (shifra === "2026") {
-                // تنفيذ الأمر: يمسح من "المخدرات" حيث المعرف لا يساوي صفر
-                const { error } = await _supabase.from('drugs').delete().neq('id', 0);
-                
-                if (!error) {
-                    alert("تمت التصفية الفعالة ✅");
-                    location.reload(); // إعادة تحميل الموقع
-                } else {
-                    alert("خطأ في الاتصال بالسحابة!");
-                }
-            } else {
-                alert("الشفرة خاطئة!");
-            }
-        }
-    </script>
-</body>
-</html>
+  );
+}
