@@ -2,74 +2,33 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة أدويا مصر | الإدارة السحابية</title>
+    <title>متجر أدويا مصر</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #007bff; --danger: #dc3545; }
-        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; text-align: center; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        .btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-danger { background: var(--danger); margin-top: 40px; font-size: 14px; padding: 10px 20px; border-radius: 10px; color: white; border: none; cursor: pointer; }
-        .item { background: #fff; padding: 15px; margin-top: 12px; border-radius: 12px; border-right: 8px solid var(--primary); text-align: right; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        hr { margin: 30px 0; border: 0; border-top: 1px dashed #ccc; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f7f6; }
+        .btn { padding: 10px 20px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-danger { background: #ff4d4d; margin-top: 50px; font-size: 12px; }
     </style>
 </head>
 <body>
+    <h1>مرحباً بكم في أدويا مصر 🇪🇬</h1>
+    <p>المتجر الرسمي للصيدليات والمخازن</p>
+    
+    <div id="drugs-list">جاري تحميل الأدوية...</div>
 
-<div class="container">
-    <h2>🔍 البحث في مخازن أدويا مصر</h2>
-    <input type="text" id="searchInput" placeholder="ابحث عن دواء..." oninput="searchInCloud(this.value)">
-    <div id="results"></div>
+    <button class="btn btn-danger" onclick="wipeData()">مسح كافة الأدوية (Admin)</button>
 
-    <hr>
+    <script>
+        const supabase = supabase.createClient('https://iksjhjxwhmvthryfeae.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
 
-    <h3>📦 إضافة دواء جديد للمخزن</h3>
-    <input type="text" id="dName" placeholder="اسم الدواء">
-    <input type="number" id="dPrice" placeholder="السعر">
-    <select id="dStore">
-        <option value="المخزن الرئيسي">المخزن الرئيسي</option>
-        <option value="فرع القاهرة">فرع القاهرة</option>
-        <option value="المخزن السحابي">المخزن السحابي</option>
-    </select>
-    <button class="btn" onclick="saveToCloud()">حفظ في السحابة</button>
-
-    <br>
-    <button class="btn btn-danger" onclick="nukeAll()">⚠️ مسح كافة محتويات المتجر</button>
-</div>
-
-<script>
-    // بياناتك المدمجة جاهزة يا دكتور
-    const S_URL = 'https://iksjhjxwhmvthryfeae.supabase.co'; 
-    const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlrc2poanh3aG12dGhyeWZlYWUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczODQ0NzgxNCwiZXhwIjoyMDU0MDIzODE0fQ.zU7D-V2_O6m5S8PwTDAAN-7m-0XU7D-V2_O6m5S8PwTDAAN-7m-0'; 
-
-    const _supabase = supabase.createClient(S_URL, S_KEY);
-
-    async function searchInCloud(query) {
-        const div = document.getElementById('results');
-        if (query.length < 2) { div.innerHTML = ""; return; }
-        const { data } = await _supabase.from('drugs').select('*').ilike('name', `%${query}%`);
-        if (data && data.length > 0) {
-            div.innerHTML = data.map(d => `<div class="item"><b>💊 ${d.name}</b> | <b>💰 ${d.price} ج.م</b><br><small>🏬 المكان: ${d.store_name}</small></div>`).join('');
-        } else { div.innerHTML = "<p>غير موجود.</p>"; }
-    }
-
-    async function saveToCloud() {
-        const n = document.getElementById('dName').value;
-        const p = document.getElementById('dPrice').value;
-        const s = document.getElementById('dStore').value;
-        if (!n || !p) { alert("أكمل البيانات"); return; }
-        const { error } = await _supabase.from('drugs').insert([{ name: n, price: p, store_name: s }]);
-        if (!error) { alert("تم الحفظ بنجاح!"); document.getElementById('dName').value = ""; document.getElementById('dPrice').value = ""; }
-    }
-
-    async function nukeAll() {
-        if (confirm("هل تريد مسح كل الأدوية من المتجر فعلياً؟")) {
-            const { error } = await _supabase.from('drugs').delete().neq('id', 0);
-            if (!error) { alert("تم تنظيف المتجر."); location.reload(); }
+        async function wipeData() {
+            const code = prompt("كود المسح النووي:");
+            if (code === "2026") {
+                await supabase.from('drugs').delete().neq('id', 0);
+                alert("تم تصفير المتجر بنجاح ✅");
+                location.reload();
+            }
         }
-    }
-</script>
+    </script>
 </body>
 </html>
