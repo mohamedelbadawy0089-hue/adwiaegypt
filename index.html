@@ -1,117 +1,168 @@
-"use client";
-import { createClient } from '@supabase/supabase-js';
-import { useState, useEffect } from 'react';
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدوية مصر - احترافي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --main-blue: #0984e3;
+            --dark-blue: #2d3436;
+            --danger-red: #d63031;
+            --light-bg: #f5f6fa;
+            --white: #ffffff;
+        }
 
-// إعداد الاتصال باستخدام المفاتيح التي ربطتها في Vercel
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--light-bg);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-export default function AdwiaEgyptFinal() {
-  const [user, setUser] = useState<any>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+        .app-container {
+            width: 90%;
+            max-width: 500px;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 20px;
+        }
 
-  // 1. نظام التسجيل (كل مخزن يسجل بنفسه)
-  const handleAuth = async (type: 'login' | 'signup') => {
-    const { data, error } = type === 'signup' 
-      ? await supabase.auth.signUp({ email, password })
-      : await supabase.auth.signInWithPassword({ email, password });
-    
-    if (error) alert("خطأ: " + error.message);
-    else {
-      setUser(data.user);
-      alert(type === 'signup' ? "مرحباً بك في AdwiaEgypt! تم إنشاء حسابك." : "تم الدخول بنجاح.");
-    }
-  };
+        .header {
+            text-align: center;
+            padding: 10px 0;
+            border-bottom: 2px solid var(--light-bg);
+        }
 
-  // 2. نظام البحث للصيدليات (مقارنة الأسعار)
-  const handleSearch = async () => {
-    const { data } = await supabase
-      .from('inventory')
-      .select('*, warehouses(name), products(name)')
-      .ilike('products.name', `%${searchTerm}%`)
-      .order('discount_percent', { ascending: false }); // الأرخص أولاً
-    setResults(data || []);
-  };
+        .header h1 {
+            color: var(--dark-blue);
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
 
-  // 3. حذف أدوية المخزن (كل مخزن يمسح منتجاته هو فقط)
-  const deleteMyMedicines = async () => {
-    if (!user) return;
-    const confirmDelete = confirm("AdwiaEgypt: هل تريد مسح كافة أدوية مخزنك فقط؟");
-    if (confirmDelete) {
-      const { error } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('warehouse_owner_id', user.id); // شرط الحذف الخاص بالمستخدم المسجل
-      if (!error) {
-        alert("تم تصفير منتجات مخزنك بنجاح.");
-        setResults([]);
-      }
-    }
-  };
+        .status-badge {
+            background: #e1f5fe;
+            color: var(--main-blue);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
 
-  return (
-    <div style={{ padding: '20px', direction: 'rtl', fontFamily: 'Arial, sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
-      <header style={{ textAlign: 'center', marginBottom: '40px', borderBottom: '2px solid #0070f3', paddingBottom: '20px' }}>
-        <h1 style={{ color: '#0070f3', fontSize: '2.5rem' }}>AdwiaEgypt - أدوية مصر 🏥</h1>
-        <p>المنصة الموحدة لربط 1000 مخزن بالصيدليات</p>
-      </header>
+        .inventory-list {
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
 
-      {/* قسم الصيدليات: البحث والمقارنة */}
-      <section style={{ backgroundColor: '#fff', border: '1px solid #ddd', padding: '20px', borderRadius: '15px', marginBottom: '30px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <h2 style={{ color: '#0070f3' }}>🔍 محرك بحث الصيدليات</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="ابحث عن دواء (مثل: بانادول)..." 
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
-          />
-          <button onClick={handleSearch} style={{ padding: '10px 25px', backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>بحث</button>
-        </div>
-        
-        <div style={{ marginTop: '20px' }}>
-          {results.map((item, index) => (
-            <div key={index} style={{ padding: '15px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <strong style={{ fontSize: '1.2rem' }}>{item.products.name}</strong><br/>
-                <span style={{ color: '#666' }}>المخزن: {item.warehouses.name}</span>
-              </div>
-              <div style={{ textAlign: 'left' }}>
-                <span style={{ color: 'green', fontWeight: 'bold', fontSize: '1.1rem' }}>خصم: {item.discount_percent}%</span>
-                <button style={{ display: 'block', marginTop: '5px', backgroundColor: '#28a745', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '5px' }}>طلب الآن 🛒</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+        .drug-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            border-right: 5px solid var(--main-blue);
+        }
 
-      {/* قسم المخازن: التسجيل والإدارة */}
-      <section style={{ backgroundColor: '#f0f7ff', padding: '25px', borderRadius: '15px', border: '1px solid #b3d7ff' }}>
-        <h2 style={{ color: '#28a745' }}>📦 بوابة أصحاب المخازن</h2>
-        {!user ? (
-          <div>
-            <p>سجل مخزنك الآن لتبدأ في عرض منتجاتك للصيدليات:</p>
-            <input type="email" placeholder="بريد المخزن الإلكتروني" onChange={(e) => setEmail(e.target.value)} style={{ display: 'block', marginBottom: '10px', padding: '10px', width: '300px', borderRadius: '5px', border: '1px solid #ccc' }} />
-            <input type="password" placeholder="كلمة المرور" onChange={(e) => setPassword(e.target.value)} style={{ display: 'block', marginBottom: '15px', padding: '10px', width: '300px', borderRadius: '5px', border: '1px solid #ccc' }} />
-            <button onClick={() => handleAuth('signup')} style={{ backgroundColor: '#28a745', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer', marginLeft: '10px' }}>تسجيل مخزن جديد</button>
-            <button onClick={() => handleAuth('login')} style={{ background: 'none', color: '#28a745', border: '1px solid #28a745', padding: '9px 20px', borderRadius: '5px', cursor: 'pointer' }}>دخول</button>
-          </div>
-        ) : (
-          <div>
-            <p>مرحباً بك: <strong>{user.email}</strong></p>
-            <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-              <button style={{ backgroundColor: '#0070f3', color: 'white', padding: '12px 25px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>رفع قائمة أدوية (Excel/CSV)</button>
-              <button onClick={deleteMyMedicines} style={{ backgroundColor: '#dc3545', color: 'white', padding: '12px 25px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>مسح جميع منتجاتي</button>
-            </div>
-            <button onClick={() => {supabase.auth.signOut(); setUser(null);}} style={{ marginTop: '20px', color: '#666', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>تسجيل الخروج</button>
-          </div>
-        )}
-      </section>
+        .drug-info h3 { margin: 0; font-size: 16px; }
+        .drug-info p { margin: 0; color: #636e72; font-size: 14px; }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .btn-delete {
+            background-color: var(--danger-red);
+            color: white;
+            box-shadow: 0 4px 15px rgba(214, 48, 49, 0.3);
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+            color: #b2bec3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1>متجر أدوية مصر 💊</h1>
+        <span class="status-badge">المتجر مفتوح الآن</span>
     </div>
-  );
-}
+
+    <div id="inventory" class="inventory-list">
+        <div class="drug-item">
+            <div class="drug-info">
+                <h3>بانادول اكسترا</h3>
+                <p>الكمية: 50 علبة</p>
+            </div>
+            <span style="font-weight: bold; color: var(--main-blue);">60 ج.م</span>
+        </div>
+        <div class="drug-item">
+            <div class="drug-info">
+                <h3>أوجمينتين 1جم</h3>
+                <p>الكمية: 12 علبة</p>
+            </div>
+            <span style="font-weight: bold; color: var(--main-blue);">90 ج.م</span>
+        </div>
+    </div>
+
+    <div id="empty-box" class="empty-state">
+        <p>لا توجد أدوية في المخزن حالياً</p>
+    </div>
+
+    <div class="actions">
+        <button class="btn btn-delete" onclick="handleDeleteAll()">
+            ⚠️ مسح جميع الأدوية
+        </button>
+    </div>
+</div>
+
+<script>
+    function handleDeleteAll() {
+        if (confirm("هل أنت متأكد من مسح جميع بيانات الأدوية من المتجر؟")) {
+            // مسح العناصر من الشاشة
+            document.getElementById('inventory').style.display = 'none';
+            document.getElementById('empty-box').style.display = 'block';
+            
+            // تنبيه للمستخدم
+            alert("تم مسح جميع البيانات بنجاح.");
+            
+            // ملاحظة: هنا يتم ربط كود Supabase للمسح من قاعدة البيانات مستقبلاً
+            console.log("تم تنفيذ أمر الحذف الكلي.");
+        }
+    }
+</script>
+
+</body>
+</html>
