@@ -2,31 +2,40 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>متجر أدويا مصر</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدويا مصر 🇪🇬</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f7f6; }
-        .btn { padding: 10px 20px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .btn-danger { background: #ff4d4d; margin-top: 50px; font-size: 12px; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f7f6; }
+        h1 { color: #0070f3; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 10px; }
+        .btn-danger { background-color: #ff4d4d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 50px; }
     </style>
 </head>
 <body>
+
     <h1>مرحباً بكم في أدويا مصر 🇪🇬</h1>
     <p>المتجر الرسمي للصيدليات والمخازن</p>
-    
-    <div id="drugs-list">جاري تحميل الأدوية...</div>
 
-    <button class="btn btn-danger" onclick="wipeData()">مسح كافة الأدوية (Admin)</button>
+    <div id="drugs-list" class="card">جاري تحميل الأدوية...</div>
+
+    <button class="btn-danger" onclick="wipeData()">مسح كافة الأدوية (Admin)</button>
 
     <script>
-        const supabase = supabase.createClient('https://iksjhjxwhmvthryfeae.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
+        // الربط بالسحابة (نفس الرابط اللي في الصورة)
+        const supabaseUrl = 'https://iksjhjxwhmvthryfeae.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // كمل المفتاح بتاعك هنا
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         async function wipeData() {
-            const code = prompt("كود المسح النووي:");
+            const code = prompt("كود المسح:");
             if (code === "2026") {
-                await supabase.from('drugs').delete().neq('id', 0);
-                alert("تم تصفير المتجر بنجاح ✅");
-                location.reload();
+                // تنفيذ الأمر اللي في الصورة (حذف كل الأدوية)
+                const { error } = await _supabase.from('drugs').delete().neq('id', 0);
+                if (!error) {
+                    alert("تمت التصفية الفعالة ✅");
+                    location.reload();
+                }
             }
         }
     </script>
