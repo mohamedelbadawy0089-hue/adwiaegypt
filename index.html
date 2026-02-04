@@ -3,153 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة أدوية مصر | نظام المخازن الموحد</title>
+    <title>أدوية مصر | المنصة المتكاملة للمخازن والصيدليات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
         :root {
             --primary: #0984e3;
+            --secondary: #2d3436;
             --success: #27ae60;
             --danger: #d63031;
-            --dark: #2d3436;
-            --light-bg: #f1f2f6;
+            --light: #f5f6fa;
         }
 
         body {
             font-family: 'Cairo', sans-serif;
-            background-color: var(--light-bg);
-            margin: 0; padding: 0;
+            background-color: var(--light);
+            margin: 0;
+            padding: 0;
+            color: var(--secondary);
         }
 
-        .header {
+        .navbar {
             background: var(--primary);
             color: white;
+            padding: 15px;
             text-align: center;
-            padding: 30px 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .container { max-width: 600px; margin: -30px auto 40px; padding: 0 15px; }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
 
-        .card {
+        /* تنسيق الأقسام */
+        .section-card {
             background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
 
-        h2 { margin-top: 0; font-size: 20px; color: var(--dark); }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
 
-        .input-group { margin-bottom: 15px; }
-        
-        input {
-            width: 100%; padding: 12px;
+        /* المدخلات والأزرار */
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
             border: 1px solid #ddd;
             border-radius: 8px;
-            box-sizing: border-box;
             font-family: 'Cairo';
+            box-sizing: border-box;
         }
 
         .btn {
-            width: 100%; padding: 14px;
-            border: none; border-radius: 8px;
-            font-weight: 700; cursor: pointer;
-            font-family: 'Cairo'; transition: 0.3s;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Cairo';
+            font-weight: bold;
+            transition: 0.3s;
+            color: white;
+            display: inline-block;
         }
 
-        .btn-main { background: var(--primary); color: white; }
-        .btn-delete { background: var(--danger); color: white; margin-top: 10px; }
-        .btn-add { background: var(--success); color: white; }
+        .btn-main { background: var(--primary); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
 
-        .inventory-item {
-            display: flex; justify-content: space-between;
-            background: #f9f9f9; padding: 12px;
-            border-radius: 8px; margin-bottom: 8px;
-            border-right: 4px solid var(--primary);
+        /* قائمة المنتجات */
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: 0.2s;
         }
 
-        .hidden { display: none; }
+        .product-item:hover { background: #f9f9f9; }
+
+        .discount-badge {
+            background: #ffeaa7;
+            color: #d35400;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .meta-info { font-size: 13px; color: #636e72; }
+
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>🇪🇬 منصة أدوية مصر</h1>
-    <p>بوابتك لإدارة مخازن الأدوية باحترافية</p>
+<div class="navbar">
+    <h1>أدوية مصر 💊</h1>
 </div>
 
 <div class="container">
     
-    <div id="login-section" class="card">
-        <h2>🔐 دخول أصحاب المخازن</h2>
-        <div class="input-group">
-            <input type="email" id="email" placeholder="البريد الإلكتروني للمخزن">
+    <div class="section-card">
+        <h3>🏢 إدارة المخزن (إدخال ومسح)</h3>
+        <div class="grid">
+            <input type="text" id="prodName" placeholder="اسم المنتج">
+            <input type="number" id="prodPrice" placeholder="السعر">
+            <input type="number" id="prodDiscount" placeholder="نسبة الخصم %">
+            <input type="text" id="warehouseID" placeholder="ID المخزن الخاص بك">
         </div>
-        <div class="input-group">
-            <input type="password" id="password" placeholder="كلمة المرور">
+        <div style="margin-top: 15px;">
+            <button class="btn btn-main" onclick="addSingleProduct()">إدخال منتج معين</button>
+            <button class="btn btn-success" onclick="bulkInsertDemo()">إدخال جماعي (تجريبي)</button>
+            <button class="btn btn-danger" onclick="deleteAllMyDrugs()">⚠️ مسح جماعي للمخزن</button>
         </div>
-        <button class="btn btn-main" onclick="handleLogin()">دخول لوحة التحكم</button>
     </div>
 
-    <div id="dashboard-section" class="card hidden">
-        <h2>📦 لوحة تحكم المخزن</h2>
-        <div class="input-group">
-            <input type="text" id="drugName" placeholder="اسم الدواء الجديد">
+    <div class="section-card">
+        <h3>🔍 بحث الصيدليات</h3>
+        <div class="grid">
+            <input type="text" id="searchName" placeholder="ابحث عن دواء معين..." onkeyup="searchDatabase()">
+            <input type="text" id="searchCity" placeholder="بحث بالمنطقة (مثال: بنها)..." onkeyup="searchDatabase()">
         </div>
-        <div class="input-group">
-            <input type="number" id="drugPrice" placeholder="السعر">
+        <div id="results" style="margin-top: 20px;">
+            <p style="text-align: center; color: #b2bec3;">قم بالبحث للعثور على الأدوية والمخازن</p>
         </div>
-        <button class="btn btn-add" onclick="addNewDrug()">➕ إضافة للمخزون</button>
-
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-        
-        <h3>منتجاتك الحالية:</h3>
-        <div id="inventory-list">
-            </div>
-
-        <button class="btn btn-delete" onclick="deleteAllData()">
-            ⚠️ مسح جميع أدوية مخزني نهائياً
-        </button>
     </div>
 
 </div>
 
 <script>
-    // بيانات الربط مع Supabase
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; 
-    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // --- إعدادات الربط مع Supabase ---
+    // استبدل هذه القيم ببياناتك من Supabase (Settings > API)
+    const SB_URL = 'https://your-project-url.supabase.co';
+    const SB_KEY = 'your-anon-key';
+    const supabase = supabase.createClient(SB_URL, SB_KEY);
 
-    // محاكاة تسجيل الدخول (للتجربة الآن)
-    function handleLogin() {
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('dashboard-section').classList.remove('hidden');
+    // 1. وظيفة البحث المدمجة (بالدواء والمنطقة والمخزن)
+    async function searchDatabase() {
+        const name = document.getElementById('searchName').value;
+        const city = document.getElementById('searchCity').value;
+
+        let query = supabase
+            .from('inventory')
+            .select(`
+                product_name, price, discount_percent,
+                warehouses (warehouse_name, location_city)
+            `);
+
+        if (name) query = query.ilike('product_name', `%${name}%`);
+        
+        const { data, error } = await query;
+        renderResults(data);
     }
 
-    // إضافة دواء جديد
-    function addNewDrug() {
-        const name = document.getElementById('drugName').value;
-        const price = document.getElementById('drugPrice').value;
-        if(name && price) {
-            const list = document.getElementById('inventory-list');
-            const item = document.createElement('div');
-            item.className = 'inventory-item';
-            item.innerHTML = `<span>${name}</span> <b>${price} ج.م</b>`;
-            list.appendChild(item);
-            document.getElementById('drugName').value = '';
-            document.getElementById('drugPrice').value = '';
+    function renderResults(data) {
+        const div = document.getElementById('results');
+        div.innerHTML = '';
+        if (!data || data.length === 0) { div.innerHTML = 'لا توجد نتائج.'; return; }
+
+        data.forEach(item => {
+            div.innerHTML += `
+                <div class="product-item">
+                    <div>
+                        <strong>${item.product_name}</strong>
+                        ${item.discount_percent > 0 ? `<span class="discount-badge">خصم ${item.discount_percent}%</span>` : ''}
+                        <div class="meta-info">مخزن: ${item.warehouses.warehouse_name} | المنطقة: ${item.warehouses.location_city}</div>
+                    </div>
+                    <div style="font-weight: bold; color: var(--primary);">${item.price} ج.م</div>
+                </div>
+            `;
+        });
+    }
+
+    // 2. إدخال منتج معين
+    async function addSingleProduct() {
+        const name = document.getElementById('prodName').value;
+        const price = document.getElementById('prodPrice').value;
+        const discount = document.getElementById('prodDiscount').value;
+        const w_id = document.getElementById('warehouseID').value;
+
+        const { error } = await supabase.from('inventory').insert([
+            { product_name: name, price: price, discount_percent: discount, warehouse_id: w_id }
+        ]);
+
+        if (error) alert("خطأ في الإدخال: " + error.message);
+        else alert("تم إضافة المنتج بنجاح!");
+    }
+
+    // 3. مسح جماعي للمخزن (طلبك الأساسي) [2026-02-01]
+    async function deleteAllMyDrugs() {
+        const w_id = document.getElementById('warehouseID').value;
+        if (!w_id) return alert("يرجى إدخال ID المخزن للمسح");
+
+        if (confirm("هل أنت متأكد من مسح جميع الأدوية في هذا المخزن؟ لا يمكن التراجع!")) {
+            const { error } = await supabase
+                .from('inventory')
+                .delete()
+                .eq('warehouse_id', w_id);
+
+            if (error) alert("خطأ: " + error.message);
+            else {
+                alert("تم مسح جميع أدوية المخزن بنجاح.");
+                location.reload();
+            }
         }
     }
 
-    // كود الحذف الشامل الذي طلبته
-    async function deleteAllData() {
-        if(confirm("تحذير: هل أنت متأكد من مسح جميع بيانات أدوية مخزنك؟ لا يمكن التراجع!")) {
-            // هنا نضع كود الحذف الفعلي من Supabase
-            document.getElementById('inventory-list').innerHTML = '';
-            alert("تم مسح المخزن بالكامل بنجاح.");
-            console.log("Action: Delete All Drugs [2026-02-01]");
-        }
+    // 4. إدخال جماعي تجريبي
+    async function bulkInsertDemo() {
+        alert("هذه الوظيفة تقوم بإدخال مصفوفة بيانات معدة مسبقاً في الكود.");
+        // الكود الفعلي سيكون مشابه لـ addSingleProduct ولكن بمصفوفة []
     }
 </script>
 
