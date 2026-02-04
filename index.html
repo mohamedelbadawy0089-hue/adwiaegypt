@@ -1,87 +1,117 @@
-"use client"; // ضروري لاستخدام أزرار البحث والحذف
-
+"use client";
 import { createClient } from '@supabase/supabase-js';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-// إعداد الاتصال باستخدام المفاتيح التي أضفتها في Vercel
+// إعداد الاتصال باستخدام المفاتيح التي ربطتها في Vercel
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function MedicinePlatform() {
+export default function AdwiaEgyptFinal() {
+  const [user, setUser] = useState<any>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<any[]>([]);
 
-  // 1. وظيفة البحث والمقارنة (تجلب أرخص سعر وأعلى خصم من 1000 مخزن)
-  const handleSearch = async () => {
-    const { data, error } = await supabase
-      .from('inventory')
-      .select(`
-        price, 
-        discount_percent, 
-        warehouses (name, city), 
-        products (product_name)
-      `)
-      .ilike('products.product_name', `%${searchTerm}%`)
-      .order('discount_percent', { ascending: false }); // ترتيب بالأعلى خصماً أولاً
-
-    if (!error && data) setResults(data);
+  // 1. نظام التسجيل (كل مخزن يسجل بنفسه)
+  const handleAuth = async (type: 'login' | 'signup') => {
+    const { data, error } = type === 'signup' 
+      ? await supabase.auth.signUp({ email, password })
+      : await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) alert("خطأ: " + error.message);
+    else {
+      setUser(data.user);
+      alert(type === 'signup' ? "مرحباً بك في AdwiaEgypt! تم إنشاء حسابك." : "تم الدخول بنجاح.");
+    }
   };
 
-  // 2. وظيفة حذف جميع الأدوية (طلبك المتكرر للتصفير)
-  const clearAllData = async () => {
-    const confirmDelete = confirm("⚠️ تحذير: هل تريد فعلاً مسح كافة الأدوية من جميع المخازن؟");
+  // 2. نظام البحث للصيدليات (مقارنة الأسعار)
+  const handleSearch = async () => {
+    const { data } = await supabase
+      .from('inventory')
+      .select('*, warehouses(name), products(name)')
+      .ilike('products.name', `%${searchTerm}%`)
+      .order('discount_percent', { ascending: false }); // الأرخص أولاً
+    setResults(data || []);
+  };
+
+  // 3. حذف أدوية المخزن (كل مخزن يمسح منتجاته هو فقط)
+  const deleteMyMedicines = async () => {
+    if (!user) return;
+    const confirmDelete = confirm("AdwiaEgypt: هل تريد مسح كافة أدوية مخزنك فقط؟");
     if (confirmDelete) {
       const { error } = await supabase
         .from('inventory')
         .delete()
-        .neq('id', 0); // حذف كافة السجلات
-      
+        .eq('warehouse_owner_id', user.id); // شرط الحذف الخاص بالمستخدم المسجل
       if (!error) {
-        alert("تم تصفير جميع المنتجات بنجاح.");
+        alert("تم تصفير منتجات مخزنك بنجاح.");
         setResults([]);
       }
     }
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-      <h1>منصة ربط الصيدليات بالمخازن</h1>
-      
-      {/* قسم البحث */}
-      <div style={{ marginBottom: '30px' }}>
-        <input 
-          type="text" 
-          placeholder="ابحث عن اسم الدواء..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: '10px', width: '300px', color: 'black' }}
-        />
-        <button onClick={handleSearch} style={{ padding: '10px', marginLeft: '10px' }}>بحث</button>
-      </div>
+    <div style={{ padding: '20px', direction: 'rtl', fontFamily: 'Arial, sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
+      <header style={{ textAlign: 'center', marginBottom: '40px', borderBottom: '2px solid #0070f3', paddingBottom: '20px' }}>
+        <h1 style={{ color: '#0070f3', fontSize: '2.5rem' }}>AdwiaEgypt - أدوية مصر 🏥</h1>
+        <p>المنصة الموحدة لربط 1000 مخزن بالصيدليات</p>
+      </header>
 
-      {/* قسم النتائج */}
-      <div style={{ border: '1px solid #ccc', padding: '10px' }}>
-        <h2>أفضل العروض المتاحة:</h2>
-        {results.map((item, index) => (
-          <div key={index} style={{ borderBottom: '1px solid #eee', padding: '10px' }}>
-            <strong>الدواء:</strong> {item.products?.product_name} <br/>
-            <strong>المخزن:</strong> {item.warehouses?.name} ({item.warehouses?.city}) <br/>
-            <strong>السعر:</strong> {item.price} | <strong>الخصم:</strong> %{item.discount_percent}
+      {/* قسم الصيدليات: البحث والمقارنة */}
+      <section style={{ backgroundColor: '#fff', border: '1px solid #ddd', padding: '20px', borderRadius: '15px', marginBottom: '30px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        <h2 style={{ color: '#0070f3' }}>🔍 محرك بحث الصيدليات</h2>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input 
+            type="text" 
+            placeholder="ابحث عن دواء (مثل: بانادول)..." 
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ccc' }}
+          />
+          <button onClick={handleSearch} style={{ padding: '10px 25px', backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>بحث</button>
+        </div>
+        
+        <div style={{ marginTop: '20px' }}>
+          {results.map((item, index) => (
+            <div key={index} style={{ padding: '15px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <strong style={{ fontSize: '1.2rem' }}>{item.products.name}</strong><br/>
+                <span style={{ color: '#666' }}>المخزن: {item.warehouses.name}</span>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <span style={{ color: 'green', fontWeight: 'bold', fontSize: '1.1rem' }}>خصم: {item.discount_percent}%</span>
+                <button style={{ display: 'block', marginTop: '5px', backgroundColor: '#28a745', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '5px' }}>طلب الآن 🛒</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* قسم المخازن: التسجيل والإدارة */}
+      <section style={{ backgroundColor: '#f0f7ff', padding: '25px', borderRadius: '15px', border: '1px solid #b3d7ff' }}>
+        <h2 style={{ color: '#28a745' }}>📦 بوابة أصحاب المخازن</h2>
+        {!user ? (
+          <div>
+            <p>سجل مخزنك الآن لتبدأ في عرض منتجاتك للصيدليات:</p>
+            <input type="email" placeholder="بريد المخزن الإلكتروني" onChange={(e) => setEmail(e.target.value)} style={{ display: 'block', marginBottom: '10px', padding: '10px', width: '300px', borderRadius: '5px', border: '1px solid #ccc' }} />
+            <input type="password" placeholder="كلمة المرور" onChange={(e) => setPassword(e.target.value)} style={{ display: 'block', marginBottom: '15px', padding: '10px', width: '300px', borderRadius: '5px', border: '1px solid #ccc' }} />
+            <button onClick={() => handleAuth('signup')} style={{ backgroundColor: '#28a745', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer', marginLeft: '10px' }}>تسجيل مخزن جديد</button>
+            <button onClick={() => handleAuth('login')} style={{ background: 'none', color: '#28a745', border: '1px solid #28a745', padding: '9px 20px', borderRadius: '5px', cursor: 'pointer' }}>دخول</button>
           </div>
-        ))}
-      </div>
-
-      {/* زر الإدارة للحذف الشامل */}
-      <div style={{ marginTop: '50px' }}>
-        <button 
-          onClick={clearAllData} 
-          style={{ backgroundColor: 'red', color: 'white', padding: '10px' }}
-        >
-          🗑️ تصفير كافة الأدوية (إدارة)
-        </button>
-      </div>
+        ) : (
+          <div>
+            <p>مرحباً بك: <strong>{user.email}</strong></p>
+            <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+              <button style={{ backgroundColor: '#0070f3', color: 'white', padding: '12px 25px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>رفع قائمة أدوية (Excel/CSV)</button>
+              <button onClick={deleteMyMedicines} style={{ backgroundColor: '#dc3545', color: 'white', padding: '12px 25px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>مسح جميع منتجاتي</button>
+            </div>
+            <button onClick={() => {supabase.auth.signOut(); setUser(null);}} style={{ marginTop: '20px', color: '#666', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>تسجيل الخروج</button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
