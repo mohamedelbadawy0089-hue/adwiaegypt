@@ -3,163 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدوية مصر - احترافي</title>
+    <title>منصة أدوية مصر | مخازن وصيدليات</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --main-blue: #0984e3;
-            --dark-blue: #2d3436;
-            --danger-red: #d63031;
-            --light-bg: #f5f6fa;
-            --white: #ffffff;
+            --primary: #0984e3;
+            --secondary: #27ae60;
+            --danger: #d63031;
+            --bg: #f0f2f5;
         }
+        body { font-family: 'Cairo', sans-serif; background-color: var(--bg); margin: 0; padding: 10px; }
+        .container { max-width: 600px; margin: auto; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        
+        /* الهيدر */
+        .header { background: var(--primary); color: white; text-align: center; padding: 20px; }
+        .tabs { display: flex; background: #eee; }
+        .tab-btn { flex: 1; padding: 15px; border: none; cursor: pointer; font-family: 'Cairo'; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: white; color: var(--primary); border-top: 3px solid var(--primary); }
 
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--light-bg);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+        .content { padding: 20px; display: none; }
+        .content.active { display: block; }
 
-        .app-container {
-            width: 90%;
-            max-width: 500px;
-            background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            overflow: hidden;
-            padding: 20px;
-        }
+        /* الفورم (للمخازن) */
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: 'Cairo'; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: 'Cairo'; margin-top: 10px; }
+        .btn-save { background: var(--secondary); color: white; }
+        .btn-search { background: var(--primary); color: white; }
 
-        .header {
-            text-align: center;
-            padding: 10px 0;
-            border-bottom: 2px solid var(--light-bg);
-        }
-
-        .header h1 {
-            color: var(--dark-blue);
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .status-badge {
-            background: #e1f5fe;
-            color: var(--main-blue);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .inventory-list {
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .drug-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f9f9f9;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 12px;
-            border-right: 5px solid var(--main-blue);
-        }
-
-        .drug-info h3 { margin: 0; font-size: 16px; }
-        .drug-info p { margin: 0; color: #636e72; font-size: 14px; }
-
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .btn {
-            border: none;
-            padding: 15px;
-            border-radius: 12px;
-            font-family: 'Cairo', sans-serif;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
-        }
-
-        .btn-delete {
-            background-color: var(--danger-red);
-            color: white;
-            box-shadow: 0 4px 15px rgba(214, 48, 49, 0.3);
-        }
-
-        .btn-delete:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
-        }
-
-        .empty-state {
-            display: none;
-            text-align: center;
-            padding: 40px 0;
-            color: #b2bec3;
-        }
+        /* القائمة (للصيدليات) */
+        .drug-card { background: #f9f9f9; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-right: 5px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .buy-btn { background: var(--secondary); color: white; padding: 5px 15px; border-radius: 5px; text-decoration: none; font-size: 14px; }
+        
+        .delete-section { padding: 20px; border-top: 1px solid #eee; }
+        .btn-delete { background: var(--danger); color: white; width: 100%; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="container">
     <div class="header">
-        <h1>متجر أدوية مصر 💊</h1>
-        <span class="status-badge">المتجر مفتوح الآن</span>
+        <h1>منصة أدوية مصر 💊</h1>
+        <p>الربط الذكي بين المخازن والصيدليات</p>
     </div>
 
-    <div id="inventory" class="inventory-list">
-        <div class="drug-item">
-            <div class="drug-info">
-                <h3>بانادول اكسترا</h3>
-                <p>الكمية: 50 علبة</p>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab(event, 'store-tab')">لوحة المخزن</button>
+        <button class="tab-btn" onclick="openTab(event, 'pharmacy-tab')">بحث الصيدليات</button>
+    </div>
+
+    <div id="store-tab" class="content active">
+        <h3>إضافة دواء جديد للمخزن</h3>
+        <input type="text" id="drugName" placeholder="اسم الدواء (مثال: بانادول)">
+        <input type="number" id="drugPrice" placeholder="السعر (جنيه)">
+        <input type="number" id="drugQty" placeholder="الكمية المتاحة">
+        <button class="btn btn-save" onclick="addDrug()">حفظ ونشر المنتج</button>
+    </div>
+
+    <div id="pharmacy-tab" class="content">
+        <h3>ابحث عن دواء لشرائه</h3>
+        <input type="text" id="searchInput" onkeyup="searchDrugs()" placeholder="اكتب اسم الدواء هنا...">
+        <div id="results-list">
+            <div class="drug-card">
+                <div>
+                    <strong>كونجستال</strong> <br>
+                    <small>السعر: 40 ج | المورد: مخزن الأمل</small>
+                </div>
+                <button class="buy-btn" onclick="alert('تم إرسال طلب الشراء للمخزن!')">شراء</button>
             </div>
-            <span style="font-weight: bold; color: var(--main-blue);">60 ج.م</span>
-        </div>
-        <div class="drug-item">
-            <div class="drug-info">
-                <h3>أوجمينتين 1جم</h3>
-                <p>الكمية: 12 علبة</p>
-            </div>
-            <span style="font-weight: bold; color: var(--main-blue);">90 ج.م</span>
         </div>
     </div>
 
-    <div id="empty-box" class="empty-state">
-        <p>لا توجد أدوية في المخزن حالياً</p>
-    </div>
-
-    <div class="actions">
-        <button class="btn btn-delete" onclick="handleDeleteAll()">
-            ⚠️ مسح جميع الأدوية
-        </button>
+    <div class="delete-section">
+        <button class="btn btn-delete" onclick="handleDeleteAll()">⚠️ مسح كافة منتجات مخزني</button>
     </div>
 </div>
 
 <script>
+    // تبديل التبويبات
+    function openTab(evt, tabName) {
+        var i, content, tabBtn;
+        content = document.getElementsByClassName("content");
+        for (i = 0; i < content.length; i++) { content[i].className = content[i].className.replace(" active", ""); }
+        tabBtn = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tabBtn.length; i++) { tabBtn[i].className = tabBtn[i].className.replace(" active", ""); }
+        document.getElementById(tabName).className += " active";
+        evt.currentTarget.className += " active";
+    }
+
+    // وظيفة المخزن: إضافة منتج
+    function addDrug() {
+        let name = document.getElementById('drugName').value;
+        let price = document.getElementById('drugPrice').value;
+        if(name && price) {
+            alert("تم إضافة " + name + " للمخزن بنجاح وجاري العرض للصيدليات");
+            document.getElementById('drugName').value = "";
+            document.getElementById('drugPrice').value = "";
+        } else {
+            alert("يرجى إدخال اسم الدواء والسعر");
+        }
+    }
+
+    // وظيفة الصيدلية: البحث
+    function searchDrugs() {
+        let input = document.getElementById('searchInput').value.toLowerCase();
+        let cards = document.getElementsByClassName('drug-card');
+        for (let i = 0; i < cards.length; i++) {
+            if (cards[i].innerText.toLowerCase().includes(input)) {
+                cards[i].style.display = "";
+            } else {
+                cards[i].style.display = "none";
+            }
+        }
+    }
+
+    // زر المسح (الطلب الخاص بك)
     function handleDeleteAll() {
-        if (confirm("هل أنت متأكد من مسح جميع بيانات الأدوية من المتجر؟")) {
-            // مسح العناصر من الشاشة
-            document.getElementById('inventory').style.display = 'none';
-            document.getElementById('empty-box').style.display = 'block';
-            
-            // تنبيه للمستخدم
-            alert("تم مسح جميع البيانات بنجاح.");
-            
-            // ملاحظة: هنا يتم ربط كود Supabase للمسح من قاعدة البيانات مستقبلاً
-            console.log("تم تنفيذ أمر الحذف الكلي.");
+        if(confirm("هل تريد مسح كافة أدوية مخزنك فقط؟")) {
+            document.getElementById('results-list').innerHTML = "<p style='text-align:center; color:#999;'>تم تصفير المخزن بنجاح</p>";
+            alert("تمت العملية بنجاح");
         }
     }
 </script>
