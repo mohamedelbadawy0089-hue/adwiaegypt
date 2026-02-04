@@ -6,36 +6,46 @@
     <title>أدويا مصر 🇪🇬</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f7f6; }
-        h1 { color: #0070f3; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 10px; }
-        .btn-danger { background-color: #ff4d4d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 50px; }
+        /* التنسيق المستوحى من صورتك الأولى */
+        body { font-family: sans-serif; text-align: center; background-color: #f4f7f6; padding: 20px; }
+        h1 { color: #0070f3; margin-bottom: 10px; }
+        .sub-title { color: #555; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        .btn-danger { background-color: #ff4d4d; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; margin-top: 50px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>مرحباً بكم في أدويا مصر 🇪🇬</h1>
-    <p>المتجر الرسمي للصيدليات والمخازن</p>
+    <div class="card">
+        <h1>مرحباً بكم في أدويا مصر 🇪🇬</h1>
+        <p class="sub-title">المتجر الرسمي للصيدليات والمخازن</p>
+        
+        <div id="drugs-list">جاري تحميل الأدوية...</div>
 
-    <div id="drugs-list" class="card">جاري تحميل الأدوية...</div>
-
-    <button class="btn-danger" onclick="wipeData()">مسح كافة الأدوية (Admin)</button>
+        <button class="btn-danger" onclick="wipeData()">مسح كافة الأدوية (Admin)</button>
+    </div>
 
     <script>
-        // الربط بالسحابة (نفس الرابط اللي في الصورة)
+        // بيانات السحابة من صورتك الثانية
         const supabaseUrl = 'https://iksjhjxwhmvthryfeae.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // كمل المفتاح بتاعك هنا
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // كمل المفتاح الموجود في صورتك
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // وظيفة المسح المترجمة في صورتك
         async function wipeData() {
-            const code = prompt("كود المسح:");
-            if (code === "2026") {
-                // تنفيذ الأمر اللي في الصورة (حذف كل الأدوية)
+            const shifra = prompt("كود المسح:");
+            if (shifra === "2026") {
+                // تنفيذ الأمر: يمسح من "المخدرات" حيث المعرف لا يساوي صفر
                 const { error } = await _supabase.from('drugs').delete().neq('id', 0);
+                
                 if (!error) {
                     alert("تمت التصفية الفعالة ✅");
-                    location.reload();
+                    location.reload(); // إعادة تحميل الموقع
+                } else {
+                    alert("خطأ في الاتصال بالسحابة!");
                 }
+            } else {
+                alert("الشفرة خاطئة!");
             }
         }
     </script>
