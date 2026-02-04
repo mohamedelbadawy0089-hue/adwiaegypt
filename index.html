@@ -3,262 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدوية مصر | المنصة المتكاملة</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <title>نظام أدوية مصر الشامل</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        :root {
-            --primary: #0984e3;
-            --secondary: #2d3436;
-            --success: #27ae60;
-            --danger: #d63031;
-            --light: #f5f6fa;
-        }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--light);
-            margin: 0; padding: 0;
-        }
-
-        .header {
-            background: var(--primary);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 20px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            background: #dfe6e9;
-            cursor: pointer;
-            font-family: 'Cairo';
-            font-weight: bold;
-            border-radius: 8px;
-        }
-
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        input {
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-family: 'Cairo';
-        }
-
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: 'Cairo';
-            font-weight: bold;
-            color: white;
-            transition: 0.3s;
-        }
-
-        .btn-add { background: var(--primary); }
-        .btn-bulk { background: var(--success); }
+        :root { --primary: #0984e3; --danger: #d63031; --light: #f5f6fa; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid var(--light); padding-bottom: 10px; }
+        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
+        input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
+        .btn { cursor: pointer; color: white; border: none; font-weight: bold; }
+        .btn-search { background: var(--primary); }
         .btn-delete { background: var(--danger); }
-
-        .product-list {
-            margin-top: 20px;
-        }
-
-        .product-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            background: #fff;
-            margin-bottom: 8px;
-            border-radius: 10px;
-            border-right: 5px solid var(--primary);
-        }
-
-        .discount-tag {
-            background: #ffeaa7;
-            color: #d35400;
-            padding: 2px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-
-        .price-tag {
-            font-weight: bold;
-            color: var(--primary);
-            font-size: 18px;
-        }
-
-        @media (max-width: 600px) {
-            .input-group { grid-template-columns: 1fr; }
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
+        th { background: var(--light); }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>أدوية مصر 💊</h1>
-    <p>بوابتك للربط بين مخازن الأدوية والصيدليات</p>
-</div>
-
 <div class="container">
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('owner')">🏠 لوحة صاحب المخزن</button>
-        <button class="tab-btn" onclick="switchTab('pharmacy')">🔍 بحث الصيدليات</button>
+    <div class="header">
+        <h1>نظام أدوية مصر 🇪🇬</h1>
+        <p>إدارة المخازن والمنتجات والبحث الشامل</p>
     </div>
 
-    <div id="owner-section" class="card">
-        <h3>إدارة المنتجات والمخزن</h3>
-        <div class="input-group">
-            <input type="text" id="p_name" placeholder="اسم المنتج">
-            <input type="number" id="p_price" placeholder="السعر">
-            <input type="number" id="p_discount" placeholder="نسبة الخصم %">
-            <input type="text" id="p_warehouse" placeholder="ID المخزن (UUID)">
-        </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="btn btn-add" onclick="insertProduct()">إدخال منتج معين</button>
-            <button class="btn btn-bulk" onclick="bulkInsert()">إدخال جماعي</button>
-            <button class="btn btn-delete" onclick="deleteAllFromWarehouse()">⚠️ مسح جماعي للمخزن</button>
-        </div>
+    <div class="controls">
+        <input type="text" id="drugName" placeholder="بحث عن منتج في كل المخازن...">
+        <select id="warehouseSelect">
+            <option value="all">كل المخازن</option>
+            <option value="1">مخزن القاهرة الرئيسي</option>
+            <option value="2">مخزن الإسكندرية</option>
+        </select>
+        <button class="btn btn-search" onclick="searchInventory()">بحث معين</button>
     </div>
 
-    <div id="pharmacy-section" class="card" style="display:none;">
-        <h3>البحث المتقدم</h3>
-        <div class="input-group">
-            <input type="text" id="search_drug" placeholder="بحث عن منتج معين في مخزن معين..." onkeyup="search()">
-            <input type="text" id="search_location" placeholder="البحث بالمنطقة الجغرافية..." onkeyup="search()">
-        </div>
-        <div id="results" class="product-list">
-            </div>
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button class="btn btn-search" style="background: #27ae60;" onclick="showAddForm()">إدخال منتج يدوي</button>
+        <button class="btn btn-search" style="background: #8e44ad;">إدخال جماعي (CSV)</button>
+        <button class="btn btn-delete" onclick="handleBulkDelete()">⚠️ حذف جماعي للأدوية</button>
     </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>اسم المنتج</th>
+                <th>المخزن</th>
+                <th>السعر الأصلي</th>
+                <th>نسبة الخصم</th>
+                <th>السعر الصافي</th>
+                <th>الإجراء</th>
+            </tr>
+        </thead>
+        <tbody id="dataTable">
+            </tbody>
+    </table>
 </div>
 
 <script>
-    // --- الربط مع Supabase ---
-    const SB_URL = 'YOUR_SUPABASE_URL';
-    const SB_KEY = 'YOUR_SUPABASE_KEY';
+    // بيانات الربط المستخرجة من صورك بدقة
+    const SB_URL = "https://iksjhjxwphmvthryfpxw.supabase.co"; 
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // ضع المفتاح الطويل الذي يبدأ بـ eyJ هنا
+
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    function switchTab(tab) {
-        document.getElementById('owner-section').style.display = tab === 'owner' ? 'block' : 'none';
-        document.getElementById('pharmacy-section').style.display = tab === 'pharmacy' ? 'block' : 'none';
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
+    // 1. وظيفة البحث في مخزن معين أو الكل (طلبك)
+    async function searchInventory() {
+        const name = document.getElementById('drugName').value;
+        const wh = document.getElementById('warehouseSelect').value;
+        
+        let query = supabaseClient.from('drugs').select('*');
+        
+        if (name) query = query.ilike('name', `%${name}%`);
+        if (wh !== 'all') query = query.eq('warehouse_id', wh);
+
+        const { data, error } = await query;
+        renderTable(data);
     }
 
-    // 1. إدخال منتج معين
-    async function insertProduct() {
-        const name = document.getElementById('p_name').value;
-        const price = document.getElementById('p_price').value;
-        const discount = document.getElementById('p_discount').value;
-        const warehouse = document.getElementById('p_warehouse').value;
-
-        const { error } = await supabaseClient.from('inventory').insert([
-            { product_name: name, price: price, discount_percent: discount, warehouse_id: warehouse }
-        ]);
-
-        if (error) alert("خطأ: " + error.message);
-        else alert("تم إضافة المنتج بنجاح!");
-    }
-
-    // 2. إدخال جماعي
-    async function bulkInsert() {
-        const warehouse = document.getElementById('p_warehouse').value;
-        if(!warehouse) return alert("يرجى إدخال ID المخزن أولاً");
-
-        const items = [
-            { product_name: 'باندول', price: 60, discount_percent: 5, warehouse_id: warehouse },
-            { product_name: 'كونجستال', price: 30, discount_percent: 10, warehouse_id: warehouse }
-        ];
-
-        const { error } = await supabaseClient.from('inventory').insert(items);
-        if (!error) alert("تم الإدخال الجماعي بنجاح!");
-    }
-
-    // 3. المسح الجماعي للمخزن [2026-02-01]
-    async function deleteAllFromWarehouse() {
-        const warehouse = document.getElementById('p_warehouse').value;
-        if(!warehouse) return alert("أدخل ID المخزن للمسح");
-
-        if(confirm("تحذير: سيتم حذف جميع الأدوية التابعة لهذا المخزن نهائياً. هل أنت متأكد؟")) {
-            const { error } = await supabaseClient.from('inventory').delete().eq('warehouse_id', warehouse);
+    // 2. وظيفة الحذف الجماعي (طلبك الدائم)
+    async function handleBulkDelete() {
+        const confirmAction = confirm("⚠️ تنبيه: هل أنت متأكد من حذف كافة الأدوية نهائياً؟");
+        if (confirmAction) {
+            // كود تصفير المخزن
+            const { error } = await supabaseClient.from('drugs').delete().neq('id', 0);
             if (!error) {
-                alert("تم مسح كافة محتويات المخزن.");
-                location.reload();
+                alert("تم حذف جميع الأدوية بنجاح.");
+                searchInventory();
             }
         }
     }
 
-    // 4. البحث (بالمنطقة، المخزن، والمنتج)
-    async function search() {
-        const drug = document.getElementById('search_drug').value;
-        const location = document.getElementById('search_location').value;
-
-        let query = supabaseClient.from('inventory').select(`
-            product_name, price, discount_percent, 
-            warehouses ( warehouse_name, location_city )
-        `);
-
-        if (drug) query = query.ilike('product_name', `%${drug}%`);
-        
-        const { data, error } = await query;
-        
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = '';
-
-        if (data) {
-            data.forEach(item => {
-                // تصفية إضافية للمنطقة الجغرافية
-                if (location && !item.warehouses.location_city.includes(location)) return;
-
-                resultsDiv.innerHTML += `
-                    <div class="product-item">
-                        <div>
-                            <strong>${item.product_name}</strong> 
-                            <span class="discount-tag">خصم ${item.discount_percent}%</span>
-                            <br><small>مخزن: ${item.warehouses.warehouse_name} | ${item.warehouses.location_city}</small>
-                        </div>
-                        <div class="price-tag">${item.price} ج.م</div>
-                    </div>
-                `;
-            });
-        }
+    // عرض البيانات في الجدول
+    function renderTable(data) {
+        const tableBody = document.getElementById('dataTable');
+        tableBody.innerHTML = data?.length ? data.map(item => `
+            <tr>
+                <td>${item.name}</td>
+                <td>${item.warehouse_id}</td>
+                <td>${item.price} ج.م</td>
+                <td>${item.discount || 0}%</td>
+                <td>${item.price - (item.price * (item.discount || 0) / 100)} ج.م</td>
+                <td><button class="btn-delete" onclick="deleteSingle(${item.id})">حذف</button></td>
+            </tr>
+        `).join('') : '<tr><td colspan="6">لا توجد نتائج بحث</td></tr>';
     }
+
+    // تشغيل البحث عند فتح الصفحة لأول مرة
+    searchInventory();
 </script>
 
 </body>
