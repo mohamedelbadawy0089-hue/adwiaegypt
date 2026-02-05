@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام أدوية مصر - الإدارة الشاملة</title>
+    <title>أدوية مصر - منصة المخازن والصيدليات</title>
+    <meta name="description" content="أدوية مصر - منصة للبحث عن الأدوية والربط بين الصيدليات والمخازن">
+    <meta name="keywords" content="أدوية مصر, مخازن أدوية, بحث أدوية">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --main: #0984e3; --pharmacy: #00b894; --danger: #d63031; --opt: #6c5ce7; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; direction: rtl; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; direction: rtl; }
         .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
         .header { text-align: center; border-bottom: 3px solid var(--main); margin-bottom: 25px; padding-bottom: 10px; }
         .warehouse-box { background: #fff3f3; border: 1px solid #fab1a0; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
@@ -17,30 +20,30 @@
         table { width: 100%; border-collapse: collapse; background: white; }
         th, td { padding: 15px; border: 1px solid #eee; text-align: center; }
         th { background: var(--main); color: white; }
-        .btn-del-item { background: var(--opt); padding: 6px 15px; font-size: 13px; }
+        .btn-del-item { background: var(--opt); padding: 6px 15px; font-size: 13px; border-radius: 5px; cursor: pointer; color: white; border: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>نظام أدوية مصر الشامل 🇪🇬</h1>
-        <p>لوحة تحكم المخازن (حذف اختياري) وبحث الصيدليات</p>
+        <h1>لوحة أدوية مصر 🇪🇬</h1>
+        <p>نظام الربط المجاني بين المخازن والصيدليات</p>
     </div>
 
     <div class="warehouse-box">
-        <h3 style="margin:0 0 10px 0; color: var(--danger);">📦 خيار للمخازن: تصفير المخزن بالكامل</h3>
-        <button class="btn btn-clear" onclick="bulkDeleteByWarehouse()">🗑️ تصفير كافة أدوية مخزني فقط (اختياري)</button>
+        <h3 style="margin:0 0 10px 0; color: var(--danger);">📦 خيار خاص بالمخازن</h3>
+        <button class="btn btn-clear" onclick="bulkDeleteByWarehouse()">🗑️ تصفير كافة أدوية مخزني بالكامل</button>
     </div>
 
-    <h3 style="color: var(--pharmacy);">🔍 قسم الصيدليات (البحث عن الأدوية)</h3>
-    <input type="text" id="searchInput" class="search-box" placeholder="ابحث عن اسم الدواء هنا..." onkeyup="loadData()">
+    <h3 style="color: var(--pharmacy);">🔍 ابحث عن الدواء (خاص بالصيدليات)</h3>
+    <input type="text" id="searchInput" class="search-box" placeholder="اكتب اسم الدواء هنا للبحث الفوري..." onkeyup="loadData()">
 
     <table>
         <thead>
             <tr>
                 <th>اسم الدواء</th>
-                <th>كود المخزن</th>
+                <th>رقم المخزن</th>
                 <th>السعر ج.م</th>
                 <th>حذف صنف (اختياري)</th>
             </tr>
@@ -50,19 +53,19 @@
 </div>
 
 <script>
-    // بيانات الربط الخاصة بك
+    // بيانات الربط المستخرجة من مشروعك
     const SB_URL = "https://iksjhjxwphmvthryfpxw.supabase.co"; 
-    const SB_KEY = "eyJh......"; // الصق المفتاح الكامل هنا من لوحة Supabase
+    const SB_KEY = "eyJh......"; // ضع هنا المفتاح الكامل (Anon Key) الخاص بك
 
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 1. جلب وعرض البيانات مع البحث
+    // 1. عرض البيانات والبحث الفوري
     async function loadData() {
-        const searchTerm = document.getElementById('searchInput').value;
+        const searchInput = document.getElementById('searchInput').value;
         let query = supabaseClient.from('drugs').select('*');
         
-        if (searchTerm) {
-            query = query.ilike('name', `%${searchTerm}%`); // دعم البحث الفوري
+        if (searchInput) {
+            query = query.ilike('name', `%${searchInput}%`); // البحث في قاعدة البيانات
         }
 
         const { data, error } = await query;
@@ -73,53 +76,45 @@
                 <tr>
                     <td><b>${item.name}</b></td>
                     <td>${item.warehouse_id}</td>
-                    <td>${item.price} ج.م</td>
-                    <td>
-                        <button class="btn btn-del-item" onclick="deleteSingleItem('${item.id}')">حذف هذا الصنف</button>
-                    </td>
+                    <td>${item.price}</td>
+                    <td><button class="btn-del-item" onclick="deleteSingleItem('${item.id}')">حذف صنف</button></td>
                 </tr>
             `).join('');
         }
     }
 
-    // 2. تصفير المخزن بالكامل (اختياري للمخزن)
+    // 2. تصفير المخزن بالكامل (للمخازن فقط)
     async function bulkDeleteByWarehouse() {
-        const warehouseId = prompt("أدخل كود المخزن الخاص بك لمسح كافة أدوية هذا المخزن فقط:");
-        if (!warehouseId) return;
+        const w_id = prompt("أدخل كود المخزن الخاص بك لمسح كافة أدوية هذا المخزن:");
+        if (!w_id) return;
 
-        const confirmation = confirm(`تنبيه: هل أنت متأكد من مسح جميع أدوية المخزن رقم ${warehouseId}؟ (لن يتأثر الأدمن)`);
-        if (confirmation) {
+        if (confirm(`هل أنت متأكد من تصفير المخزن رقم ${w_id}؟`)) {
             const { error } = await supabaseClient
                 .from('drugs')
                 .delete()
-                .eq('warehouse_id', warehouseId); // حذف أدوية المخزن المحدد فقط
+                .eq('warehouse_id', w_id); // حذف أدوية مخزن معين
 
             if (!error) {
-                alert(`تم تصفير المخزن ${warehouseId} بنجاح ✅`);
+                alert(`تم تصفير المخزن ${w_id} بنجاح ✅`);
                 loadData();
             } else {
-                alert("حدث خطأ، تأكد من كود المخزن.");
+                alert("تأكد من كود المخزن الصحيح");
             }
         }
     }
 
-    // 3. حذف صنف واحد محدد (اختياري للمخزن)
+    // 3. حذف صنف واحد محدد (اختياري)
     async function deleteSingleItem(id) {
-        if (confirm("هل تريد حذف هذا الدواء المحدد فقط؟")) {
-            const { error } = await supabaseClient
-                .from('drugs')
-                .delete()
-                .eq('id', id);
-
+        if (confirm("هل تريد حذف هذا الدواء فقط؟")) {
+            const { error } = await supabaseClient.from('drugs').delete().eq('id', id);
             if (!error) {
                 loadData();
-                alert("تم حذف الصنف ✅");
+                alert("تم الحذف ✅");
             }
         }
     }
 
-    // تشغيل الجلب التلقائي عند فتح الصفحة
-    loadData();
+    loadData(); // تشغيل الجلب عند الفتح
 </script>
 </body>
 </html>
