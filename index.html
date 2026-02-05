@@ -3,118 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدوية مصر - منصة المخازن والصيدليات</title>
-    <meta name="description" content="أدوية مصر - منصة للبحث عن الأدوية والربط بين الصيدليات والمخازن">
-    <meta name="keywords" content="أدوية مصر, مخازن أدوية, بحث أدوية">
-    
+    <title>أدوية مصر - مساعد Gemini الذكي</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main: #0984e3; --pharmacy: #00b894; --danger: #d63031; --opt: #6c5ce7; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; direction: rtl; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .header { text-align: center; border-bottom: 3px solid var(--main); margin-bottom: 25px; padding-bottom: 10px; }
-        .warehouse-box { background: #fff3f3; border: 1px solid #fab1a0; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
-        .btn { border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
-        .btn-clear { background: var(--danger); width: 100%; font-size: 16px; }
-        .search-box { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 18px; margin-bottom: 25px; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 15px; border: 1px solid #eee; text-align: center; }
-        th { background: var(--main); color: white; }
-        .btn-del-item { background: var(--opt); padding: 6px 15px; font-size: 13px; border-radius: 5px; cursor: pointer; color: white; border: none; }
+        :root { --gemini-blue: #1a73e8; --pharmacy-green: #00b894; --warehouse-orange: #e17055; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; direction: rtl; }
+        .container { max-width: 900px; margin: auto; }
+        
+        /* أيقونة Gemini الثابتة */
+        .gemini-float { position: fixed; bottom: 20px; left: 20px; width: 70px; height: 70px; background: white; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--gemini-blue); z-index: 1000; transition: 0.3s; }
+        .gemini-float:hover { transform: scale(1.1); }
+
+        /* صندوق تعليمات Gemini */
+        #geminiAssistant { display: none; position: fixed; bottom: 100px; left: 20px; width: 300px; background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); border-right: 5px solid var(--gemini-blue); z-index: 999; }
+
+        /* التصميم العام */
+        .card { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .btn { border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; width: 100%; margin-top: 10px; }
+        .input-group { margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        .tab-btn { padding: 15px; cursor: pointer; border: none; background: #eee; flex: 1; font-weight: bold; }
+        .tab-btn.active { background: var(--gemini-blue); color: white; }
+        .tabs { display: flex; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
+        th { background: #f1f1f1; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>لوحة أدوية مصر 🇪🇬</h1>
-        <p>نظام الربط المجاني بين المخازن والصيدليات</p>
+    <h2 style="text-align:center; color: var(--gemini-blue);">🇪🇬 أدوية مصر - النظام الموحد</h2>
+
+    <div class="tabs">
+        <button id="pTab" class="tab-btn active" onclick="switchTab('pharmacy')">🔍 بحث الصيدليات</button>
+        <button id="wTab" class="tab-btn" onclick="switchTab('warehouse')">📦 رفع المخازن</button>
     </div>
 
-    <div class="warehouse-box">
-        <h3 style="margin:0 0 10px 0; color: var(--danger);">📦 خيار خاص بالمخازن</h3>
-        <button class="btn btn-clear" onclick="bulkDeleteByWarehouse()">🗑️ تصفير كافة أدوية مخزني بالكامل</button>
+    <div id="pharmacySection" class="card">
+        <h3>ابحث عن الدواء في كافة المخازن</h3>
+        <input type="text" id="searchInput" placeholder="اكتب اسم الدواء هنا..." onkeyup="searchDrugs()">
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>الدواء</th>
+                    <th>المخزن</th>
+                    <th>السعر</th>
+                </tr>
+            </thead>
+            <tbody id="pharmacyData"></tbody>
+        </table>
     </div>
 
-    <h3 style="color: var(--pharmacy);">🔍 ابحث عن الدواء (خاص بالصيدليات)</h3>
-    <input type="text" id="searchInput" class="search-box" placeholder="اكتب اسم الدواء هنا للبحث الفوري..." onkeyup="loadData()">
+    <div id="warehouseSection" class="card" style="display:none;">
+        <h3>إضافة منتجات جديدة لمخزنك</h3>
+        <div class="input-group"><input type="text" id="wDrugName" placeholder="اسم الدواء الجديد"></div>
+        <div class="input-group"><input type="number" id="wPrice" placeholder="السعر (ج.م)"></div>
+        <div class="input-group"><input type="text" id="wId" placeholder="كود المخزن الخاص بك"></div>
+        <button class="btn" style="background: var(--warehouse-orange);" onclick="addDrug()">إضافة للمتجر ✅</button>
+        
+        <hr style="margin: 30px 0;">
+        <h4 style="color:red;">منطقة التحكم (خاص بالمخازن)</h4>
+        <button class="btn" style="background: #636e72;" onclick="loadWarehouseItems()">عرض منتجات مخزني فقط</button>
+        <button class="btn" style="background: #d63031;" onclick="bulkDelete()">🗑️ تصفير مخزني بالكامل</button>
+        <tbody id="warehouseData"></tbody>
+    </div>
+</div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>اسم الدواء</th>
-                <th>رقم المخزن</th>
-                <th>السعر ج.م</th>
-                <th>حذف صنف (اختياري)</th>
-            </tr>
-        </thead>
-        <tbody id="dataTable"></tbody>
-    </table>
+<div class="gemini-float" onclick="toggleGemini()">
+    <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d47353039331e63a71.svg" width="40" alt="Gemini">
+</div>
+
+<div id="geminiAssistant">
+    <h4 style="color: var(--gemini-blue); margin-top: 0;">مرحباً، أنا Gemini مساعدك الذكي!</h4>
+    <p style="font-size: 14px; line-height: 1.6;">
+        <b>للمخازن:</b> اختر "رفع المخازن" لإدخال أدويتك بالاسم والسعر وكود مخزنك.<br><br>
+        <b>للصيدليات:</b> ابحث بالاسم في الواجهة الرئيسية لتجد أقل سعر ومكان الدواء فوراً.
+    </p>
+    <button class="btn" style="background: var(--gemini-blue); font-size: 12px;" onclick="toggleGemini()">فهمت ذلك</button>
 </div>
 
 <script>
-    // بيانات الربط المستخرجة من مشروعك
     const SB_URL = "https://iksjhjxwphmvthryfpxw.supabase.co"; 
-    const SB_KEY = "eyJh......"; // ضع هنا المفتاح الكامل (Anon Key) الخاص بك
-
+    const SB_KEY = "eyJh......"; // ضع المفتاح الكامل الخاص بك هنا
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 1. عرض البيانات والبحث الفوري
-    async function loadData() {
-        const searchInput = document.getElementById('searchInput').value;
+    function toggleGemini() {
+        const assistant = document.getElementById('geminiAssistant');
+        assistant.style.display = (assistant.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function switchTab(type) {
+        document.getElementById('pharmacySection').style.display = (type === 'pharmacy') ? 'block' : 'none';
+        document.getElementById('warehouseSection').style.display = (type === 'warehouse') ? 'block' : 'none';
+        document.getElementById('pTab').classList.toggle('active', type === 'pharmacy');
+        document.getElementById('wTab').classList.toggle('active', type === 'warehouse');
+    }
+
+    // للمخازن: رفع المنتج
+    async function addDrug() {
+        const name = document.getElementById('wDrugName').value;
+        const price = document.getElementById('wPrice').value;
+        const warehouse_id = document.getElementById('wId').value;
+        if(!name || !price || !warehouse_id) return alert("املأ كافة البيانات!");
+
+        const { error } = await supabaseClient.from('drugs').insert([{ name, price, warehouse_id }]);
+        if(!error) { alert("تم الرفع بنجاح ✅"); searchDrugs(); }
+    }
+
+    // للصيدليات: بحث فوري
+    async function searchDrugs() {
+        const term = document.getElementById('searchInput').value;
         let query = supabaseClient.from('drugs').select('*');
-        
-        if (searchInput) {
-            query = query.ilike('name', `%${searchInput}%`); // البحث في قاعدة البيانات
-        }
+        if(term) query = query.ilike('name', `%${term}%`);
 
-        const { data, error } = await query;
-        const tableBody = document.getElementById('dataTable');
+        const { data } = await query;
+        document.getElementById('pharmacyData').innerHTML = data ? data.map(i => `
+            <tr><td>${i.name}</td><td>${i.warehouse_id}</td><td>${i.price} ج.م</td></tr>
+        `).join('') : '';
+    }
 
-        if (data) {
-            tableBody.innerHTML = data.map(item => `
-                <tr>
-                    <td><b>${item.name}</b></td>
-                    <td>${item.warehouse_id}</td>
-                    <td>${item.price}</td>
-                    <td><button class="btn-del-item" onclick="deleteSingleItem('${item.id}')">حذف صنف</button></td>
-                </tr>
-            `).join('');
+    // تصفير مخزن
+    async function bulkDelete() {
+        const code = prompt("أدخل كود المخزن للتصفير:");
+        if(code && confirm("حذف جميع أدويتك؟")) {
+            await supabaseClient.from('drugs').delete().eq('warehouse_id', code);
+            alert("تم التصفير بنجاح ✅");
+            searchDrugs();
         }
     }
 
-    // 2. تصفير المخزن بالكامل (للمخازن فقط)
-    async function bulkDeleteByWarehouse() {
-        const w_id = prompt("أدخل كود المخزن الخاص بك لمسح كافة أدوية هذا المخزن:");
-        if (!w_id) return;
-
-        if (confirm(`هل أنت متأكد من تصفير المخزن رقم ${w_id}؟`)) {
-            const { error } = await supabaseClient
-                .from('drugs')
-                .delete()
-                .eq('warehouse_id', w_id); // حذف أدوية مخزن معين
-
-            if (!error) {
-                alert(`تم تصفير المخزن ${w_id} بنجاح ✅`);
-                loadData();
-            } else {
-                alert("تأكد من كود المخزن الصحيح");
-            }
-        }
-    }
-
-    // 3. حذف صنف واحد محدد (اختياري)
-    async function deleteSingleItem(id) {
-        if (confirm("هل تريد حذف هذا الدواء فقط؟")) {
-            const { error } = await supabaseClient.from('drugs').delete().eq('id', id);
-            if (!error) {
-                loadData();
-                alert("تم الحذف ✅");
-            }
-        }
-    }
-
-    loadData(); // تشغيل الجلب عند الفتح
+    searchDrugs();
 </script>
 </body>
 </html>
