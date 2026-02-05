@@ -1,84 +1,75 @@
-import { createClient } from '@supabase/supabase-js';
-import { useState } from 'react';
-
-// --- بيانات مشروعك المستخرجة من الصور ---
-const SUPABASE_URL = 'https://hess14677-netizen.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlc3MxNDY3Ny1uZXRpemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY4MjY0MTgsImV4cCI6MjAyMjQwMjQxOH0.example_key';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-export default function AdwaaEgyptApp() {
-  const [view, setView] = useState('pharmacy'); 
-  const [results, setResults] = useState([]);
-  const [cart, setCart] = useState([]);
-
-  // 1. وظيفة المسح الشامل (طلبك المحفوظ)
-  const handleClearEverything = async (warehouseId) => {
-    const { error } = await supabase.rpc('delete_all_drugs_every_time', { w_id: warehouseId });
-    if (!error) {
-      alert("تم مسح كافة الأدوية بنجاح من المخزن 🗑️");
-      setResults([]);
-    } else {
-      alert("حدث خطأ، تأكد من انتهاء عطل Supabase وتشغيل كود SQL.");
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدويا مصر - النظام المدمج</title>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+      }
     }
-  };
+    </script>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
 
-  // 2. وظيفة البحث والشراء للصيدلية
-  const handleSearch = async (val) => {
-    const { data } = await supabase.from('products')
-      .select('*, warehouses(*)')
-      .textSearch('search_vector', val)
-      .order('discount_percentage', { ascending: false });
-    setResults(data || []);
-  };
+    <div id="root"></div>
 
-  const confirmOrder = async () => {
-    if (cart.length === 0) return;
-    const { error } = await supabase.from('orders').insert([{
-      warehouse_id: cart[0].warehouse_id,
-      total_amount: cart.reduce((s, i) => s + i.price, 0),
-      items: cart,
-      pharmacy_name: 'صيدلية النيل'
-    }]);
-    if (!error) {
-      alert("تم إرسال طلب الشراء للمخزن بنجاح ✅");
-      setCart([]);
-    }
-  };
+    <script type="module">
+        import React, { useState } from 'react';
+        import ReactDOM from 'react-dom';
+        import { createClient } from '@supabase/supabase-js';
 
-  return (
-    <div dir="rtl" style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
-      <header style={{ marginBottom: '30px', display: 'flex', gap: '15px', justifyContent: 'center' }}>
-        <button onClick={() => setView('pharmacy')} style={{ padding: '12px 20px', background: view === 'pharmacy' ? '#007bff' : '#fff', color: view === 'pharmacy' ? 'white' : '#333', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>شاشة الصيدلية (شراء)</button>
-        <button onClick={() => setView('warehouse')} style={{ padding: '12px 20px', background: view === 'warehouse' ? '#dc3545' : '#fff', color: view === 'warehouse' ? 'white' : '#333', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>شاشة المخزن (إدارة)</button>
-      </header>
+        // بيانات مشروعك المستخرجة من الصور
+        const SUPABASE_URL = 'https://hess14677-netizen.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlc3MxNDY3Ny1uZXRpemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY4MjY0MTgsImV4cCI6MjAyMjQwMjQxOH0.example';
 
-      {view === 'pharmacy' ? (
-        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <input type="text" placeholder="ابحث عن دواء بخصوماته..." style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #ccc' }}
-                 onChange={(e) => handleSearch(e.target.value)} />
-          <div style={{ marginTop: '20px' }}>
-            {results.map(p => (
-              <div key={p.id} style={{ background: 'white', padding: '15px', borderRadius: '12px', marginBottom: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ margin: 0 }}>{p.product_name}</h3>
-                  <p style={{ color: '#28a745', fontWeight: 'bold', margin: '5px 0' }}>خصم {p.discount_percentage}% | السعر: {p.price} ج.م</p>
-                </div>
-                <button onClick={() => setCart([...cart, p])} style={{ background: '#007bff', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer' }}>شراء 🛒</button>
-              </div>
-            ))}
-          </div>
-          {cart.length > 0 && <button onClick={confirmOrder} style={{ position: 'fixed', bottom: '20px', left: '20px', right: '20px', padding: '18px', background: '#28a745', color: 'white', borderRadius: '15px', fontSize: '18px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>تأكيد الشراء لـ {cart.length} أصناف</button>}
-        </div>
-      ) : (
-        <div style={{ textAlign: 'center', marginTop: '100px' }}>
-          <h2 style={{ color: '#333' }}>لوحة إدارة مخزن أدويا مصر</h2>
-          <p style={{ color: '#666', marginBottom: '30px' }}>استخدم الزر أدناه لمسح كل البيانات وتصفير المخزن</p>
-          <button onClick={() => handleClearEverything('ضع_هنا_ID_المخزن')} style={{ background: '#dc3545', color: 'white', padding: '25px 50px', fontSize: '20px', borderRadius: '20px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)' }}>
-             مسح كافة الأدوية من النظام فوراً 🗑️
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function AdwaaEgyptApp() {
+            const [view, setView] = useState('pharmacy');
+            const [results, setResults] = useState([]);
+
+            // 1. وظيفة المسح الشامل (طلبك المحفوظ: حذف الأدوية كل مرة) [cite: 2026-02-01]
+            const handleClearEverything = async () => {
+                const warehouseId = 'ضع_هنا_ID_المخزن'; // تأكد من وضعه بعد تنفيذ كود SQL
+                const { error } = await supabase.rpc('delete_all_drugs_every_time', { w_id: warehouseId }); [cite: 2026-02-01]
+                if (!error) {
+                    alert("تم تصفير المخزن بنجاح 🗑️");
+                    setResults([]);
+                } else {
+                    alert("خطأ في الاتصال: " + error.message);
+                }
+            };
+
+            // 2. وظيفة البحث والشراء للصيدلية
+            const handleSearch = async (val) => {
+                const { data } = await supabase.from('products').select('*, warehouses(*)').textSearch('search_vector', val);
+                setResults(data || []);
+            };
+
+            return React.createElement('div', null,
+                React.createElement('nav', { style: { display: 'flex', gap: '10px', marginBottom: '20px' } },
+                    React.createElement('button', { onClick: () => setView('pharmacy'), style: { padding: '10px', borderRadius: '5px' } }, 'بحث الصيدليات 🛒'),
+                    React.createElement('button', { onClick: () => setView('warehouse'), style: { padding: '10px', background: '#dc3545', color: '#fff', borderRadius: '5px' } }, 'إدارة المخزن ⚙️')
+                ),
+                view === 'pharmacy' ? 
+                React.createElement('div', null,
+                    React.createElement('input', { type: 'text', placeholder: 'ابحث عن دواء بخصم...', style: { width: '100%', padding: '10px' }, onChange: (e) => handleSearch(e.target.value) }),
+                    results.map(p => React.createElement('div', { key: p.id, style: { background: '#fff', margin: '10px 0', padding: '10px' } }, p.product_name))
+                ) : 
+                React.createElement('div', { style: { textAlign: 'center' } },
+                    React.createElement('button', { onClick: handleClearEverything, style: { padding: '20px', background: '#dc3545', color: '#fff', fontSize: '18px' } }, 'مسح كافة الأدوية فوراً 🗑️')
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(AdwaaEgyptApp));
+    </script>
+</body>
+</html>
