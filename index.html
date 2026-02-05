@@ -2,228 +2,92 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدوية مصر - النظام الذكي المتكامل</title>
-    
+    <title>أدوية مصر - المتجر الذكي</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <style>
-        :root { --main: #0984e3; --pharmacy: #00b894; --danger: #d63031; --voice: #6c5ce7; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; direction: rtl; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .card { background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eee; }
-        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-weight: bold; }
-        .btn-main { background: var(--main); color: white; border: none; cursor: pointer; transition: 0.3s; }
-        .btn-main:hover { transform: scale(1.01); opacity: 0.9; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; direction: rtl; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .card { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
+        input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; }
+        .btn-main { background: #0984e3; color: white; cursor: pointer; border: none; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
-        th { background: var(--main); color: white; }
-        .best-price { background: #eafff2 !important; border: 2px solid var(--pharmacy); font-weight: bold; color: #27ae60; }
-        
-        /* الأيقونة الصوتية الثابتة */
-        #gemini-assistant { 
-            position: fixed; bottom: 30px; left: 30px; width: 70px; height: 70px; 
-            background: var(--voice); border-radius: 50%; display: flex; align-items: center; 
-            justify-content: center; cursor: pointer; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.4); 
-            border: 3px solid white; transition: 0.3s; 
-        }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(108, 92, 231, 0); } 100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); } }
-        .listening { animation: pulse 1.5s infinite; background: #ff7675 !important; }
+        th, td { padding: 10px; border: 1px solid #eee; text-align: center; }
+        th { background: #0984e3; color: white; }
+        /* أيقونة الروبوت العائمة */
+        #gemini-fab { position: fixed; bottom: 20px; left: 20px; width: 60px; height: 60px; background: #6c5ce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid white; box-shadow: 0 5px 10px rgba(0,0,0,0.3); z-index: 1000; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="text-align: center; border-bottom: 3px solid var(--main); margin-bottom: 25px;">
-        <h1>نظام أدوية مصر الذكي 🇪🇬</h1>
-        <p>المساعد الآلي (البحث الذكي للصيدليات وسحب شيتات المخازن)</p>
-    </div>
-
+    <h1>نظام أدوية مصر الذكي 🇪🇬</h1>
+    
     <div class="card">
-        <h3>📦 بوابة المخازن: تحديث المخزون الذكي</h3>
-        <p style="font-size: 0.85em; color: #555;">ارفع أي شيت إكسيل (سأقوم بفهم الأعمدة تلقائياً ومسح بياناتك القديمة لرفع الجديدة).</p>
+        <h3>📦 للمخازن (تحديث تلقائي)</h3>
         <input type="file" id="excelFile" accept=".xlsx, .xls">
-        <input type="text" id="warehouseId" placeholder="أدخل كود المخزن الخاص بك (مثلاً: 101)">
-        <button class="btn-main" onclick="handleSmartUpload()">📂 سحب الشيت وتحديث القائمة فوراً</button>
+        <input type="text" id="warehouseId" placeholder="كود المخزن">
+        <button class="btn-main" onclick="uploadData()">سحب الشيت وتحديث القائمة</button>
     </div>
 
-    <div class="card" style="border: 2px solid var(--pharmacy);">
-        <h3 style="color: var(--pharmacy);">🔍 الصيدليات: ابحث عن دواء وأقل سعر في السوق</h3>
-        <input type="text" id="searchInput" placeholder="اكتب اسم الدواء هنا لمقارنة المخازن..." onkeyup="loadData()">
+    <div class="card" style="border: 2px solid #00b894;">
+        <h3>🔍 للصيدليات (بحث وأقل سعر)</h3>
+        <input type="text" id="searchInput" placeholder="ابحث عن دواء..." onkeyup="loadData()">
     </div>
 
-    <table id="resultsTable">
+    <table>
         <thead>
-            <tr>
-                <th>اسم الدواء</th>
-                <th>المخزن</th>
-                <th>السعر</th>
-                <th>إجراء</th>
-            </tr>
+            <tr><th>الصنف</th><th>المخزن</th><th>السعر</th></tr>
         </thead>
         <tbody id="dataTable"></tbody>
     </table>
 </div>
 
-<div id="gemini-assistant" onclick="activateVoice()">
-    <span style="font-size: 30px;">🎙️</span>
-</div>
+<div id="gemini-fab" onclick="startVoice()">🤖</div>
 
 <script>
-    // بيانات الربط المباشرة
     const SB_URL = "https://iksjhjxwphmvthryfpxw.supabase.co";
-    const SB_KEY = "eyJh......"; // ضع هنا الـ Anon Key الكامل الخاص بك
-
+    const SB_KEY = "eyJhY2Nlc3NfdG9rZW4iOiI..."; // حط مفتاحك هنا
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 1. محرك "سحب الشيت" الذكي (يفهم كل أنواع الإكسيل في السوق)
-    async function handleSmartUpload() {
+    async function uploadData() {
         const file = document.getElementById('excelFile').files[0];
         const w_id = document.getElementById('warehouseId').value;
-        if (!file || !w_id) return alert("يرجى اختيار ملف وكتابة كود المخزن");
-
         const reader = new FileReader();
         reader.onload = async (e) => {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
+            const workbook = XLSX.read(data, {type: 'array'});
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            
-            // تحليل الأعمدة بذكاء لتناسب أي شيت في السوق
-            const processedData = jsonData.map(item => {
-                const name = item.name || item['الاسم'] || item['الصنف'] || item['اسم الصنف'] || item['المنتج'] || item['Item'];
-                const price = item.price || item['السعر'] || item['سعر الجمهور'] || item['Price'] || item['ليستة'];
-                return { name, price: parseFloat(price), warehouse_id: w_id };
-            }).filter(i => i.name && i.price);
-
-            if (processedData.length === 0) return alert("لم أستطع فهم أعمدة الملف. تأكد من وجود اسم وسعر.");
-
-            // تنفيذ المسح ثم الرفع (الإحلال والتجديد)
-            await supabaseClient.from('drugs').delete().eq('warehouse_id', w_id);
-            const { error } = await supabaseClient.from('drugs').insert(processedData);
-
-            if (!error) {
-                speakAssistant(`تم تحديث مخزنك بـ ${processedData.length} صنف جديد ومسح القائمة القديمة`);
-                alert("تم التحديث بنجاح ✅");
-                loadData();
-            }
+            const finalData = jsonData.map(i => ({
+                name: i.name || i['الاسم'] || i['الصنف'],
+                price: parseFloat(i.price || i['السعر']),
+                warehouse_id: w_id
+            }));
+            await supabaseClient.from('drugs').delete().eq('warehouse_id', w_id); // مسح القديم
+            await supabaseClient.from('drugs').insert(finalData); // رفع الجديد
+            alert("تم التحديث!"); loadData();
         };
         reader.readAsArrayBuffer(file);
     }
 
-    // 2. محرك البحث الذكي (مقارنة الأسعار للصيدليات)
     async function loadData() {
         const term = document.getElementById('searchInput').value;
-        // ترتيب تصاعدي (الأرخص أولاً)
-        let query = supabaseClient.from('drugs').select('*').order('price', { ascending: true });
+        let query = supabaseClient.from('drugs').select('*').order('price', {ascending: true});
         if (term) query = query.ilike('name', `%${term}%`);
-
         const { data } = await query;
-        const tbody = document.getElementById('dataTable');
-        tbody.innerHTML = data ? data.map((item, index) => `
-            <tr class="${index === 0 && term ? 'best-price' : ''}">
-                <td><b>${item.name}</b></td>
-                <td>🏢 مخزن: ${item.warehouse_id}</td>
-                <td>${item.price} ج.م ${index === 0 && term ? '⭐ (أرخص عرض)' : ''}</td>
-                <td><button onclick="deleteSingle('${item.id}')" style="color:red; background:none; border:none; cursor:pointer;">حذف</button></td>
-            </tr>
-        `).join('') : '';
+        document.getElementById('dataTable').innerHTML = data.map(i => `<tr><td>${i.name}</td><td>${i.warehouse_id}</td><td>${i.price} ج.م</td></tr>`).join('');
     }
 
-    // 3. المساعد الصوتي التفاعلي
-    function activateVoice() {
-        const btn = document.getElementById('gemini-assistant');
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'ar-EG';
-        recognition.onstart = () => btn.classList.add('listening');
-        recognition.onresult = (event) => {
-            const voiceText = event.results[0][0].transcript;
-            document.getElementById('searchInput').value = voiceText;
-            loadData();
-            speakAssistant(`أبشر يا محمد، أبحث لك عن ${voiceText} وأقارن لك أسعار المخازن حالاً.`);
-            btn.classList.remove('listening');
+    function startVoice() {
+        const rec = new (window.SpeechRecognition || window.webkitRecognition)();
+        rec.lang = 'ar-EG';
+        rec.onresult = (e) => { 
+            document.getElementById('searchInput').value = e.results[0][0].transcript; 
+            loadData(); 
         };
-        recognition.onerror = () => btn.classList.remove('listening');
-        recognition.start();
+        rec.start();
     }
-
-    function speakAssistant(text) {
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'ar-EG';
-        window.speechSynthesis.speak(msg);
-    }
-
-    async function deleteSingle(id) {
-        if(confirm("حذف الصنف؟")) {
-            await supabaseClient.from('drugs').delete().eq('id', id);
-            loadData();
-        }
-    }
-
     loadData();
-</script><div id="gemini-fab" onclick="toggleGeminiMenu()" 
-     style="position: fixed; bottom: 30px; left: 30px; width: 80px; height: 80px; 
-            background: linear-gradient(135deg, #6c5ce7, #a29bfe); border-radius: 50%; 
-            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.5); display: flex; align-items: center; 
-            justify-content: center; cursor: pointer; z-index: 9999; border: 4px solid white; transition: 0.4s ease;">
-    <span style="font-size: 35px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">🤖</span>
-</div>
-
-<div id="gemini-menu" style="display:none; position: fixed; bottom: 120px; left: 30px; width: 250px; 
-     background: white; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); padding: 15px; z-index: 9998; direction: rtl;">
-    <h4 style="margin: 0 0 10px; color: #6c5ce7; border-bottom: 1px solid #eee; padding-bottom: 5px;">مساعد أدوية مصر الذكي</h4>
-    <button onclick="startVoiceAction()" style="background:#6c5ce7; color:white; border:none; padding:10px; width:100%; border-radius:8px; margin-bottom:10px; cursor:pointer;">🎙️ بحث صوتي (للصيدليات)</button>
-    <button onclick="window.scrollTo(0,0)" style="background:#00b894; color:white; border:none; padding:10px; width:100%; border-radius:8px; cursor:pointer;">📂 رفع شيت (للمخازن)</button>
-</div>
-
-<style>
-    /* تأثيرات حركية للأيقونة */
-    #gemini-fab:hover { transform: scale(1.1) rotate(10deg); }
-    .pulse-ring { animation: pulse-animation 1.5s infinite; }
-    @keyframes pulse-animation {
-        0% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.7); }
-        70% { box-shadow: 0 0 0 20px rgba(108, 92, 231, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); }
-    }
-</style>
-
-<script>
-    // فتح وإغلاق قائمة المساعد
-    function toggleGeminiMenu() {
-        const menu = document.getElementById('gemini-menu');
-        menu.style.display = (menu.style.display === 'none') ? 'block' : 'none';
-    }
-
-    // تشغيل البحث الصوتي مع رد صوتي ذكي
-    function startVoiceAction() {
-        toggleGeminiMenu();
-        const btn = document.getElementById('gemini-fab');
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'ar-EG';
-        
-        recognition.onstart = () => {
-            btn.classList.add('pulse-ring');
-            speak("أنا أسمعك يا دكتور، عن أي دواء تبحث؟");
-        };
-
-        recognition.onresult = (event) => {
-            const text = event.results[0][0].transcript;
-            document.getElementById('searchInput').value = text;
-            loadData(); // دالة البحث الموجودة في كودك الأصلي
-            speak(`وجدت لك عروض على ${text}، وأفضل سعر في المقدمة.`);
-            btn.classList.remove('pulse-ring');
-        };
-
-        recognition.onerror = () => btn.classList.remove('pulse-ring');
-        recognition.start();
-    }
-
-    // وظيفة الرد الصوتي
-    function speak(text) {
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'ar-EG';
-        window.speechSynthesis.speak(msg);
-    }
 </script>
 </body>
 </html>
