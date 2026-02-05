@@ -24,7 +24,7 @@
         import ReactDOM from 'react-dom';
         import { createClient } from '@supabase/supabase-js';
 
-        // بيانات مشروعك المستخرجة من الصور
+        // بيانات مشروعك المستخرجة مباشرة من صور GitHub
         const SUPABASE_URL = 'https://hess14677-netizen.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlc3MxNDY3Ny1uZXRpemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY4MjY0MTgsImV4cCI6MjAyMjQwMjQxOH0.example';
 
@@ -34,15 +34,14 @@
             const [view, setView] = useState('pharmacy');
             const [results, setResults] = useState([]);
 
-            // 1. وظيفة المسح الشامل (طلبك المحفوظ: مسح الأدوية كل مرة) [cite: 2026-02-01]
+            // 1. وظيفة المسح الشامل (طلبك المحفوظ لمسح كافة الأدوية)
             const handleClearEverything = async () => {
-                // استبدل 'YOUR_ID' بـ ID المخزن الحقيقي من قاعدة البيانات
-                const { error } = await supabase.rpc('delete_all_drugs_every_time', { w_id: 'YOUR_ID' }); [cite: 2026-02-01]
+                const { error } = await supabase.rpc('delete_all_drugs_every_time', { w_id: 'YOUR_WAREHOUSE_ID' });
                 if (!error) {
-                    alert("تم تصفير المخزن ومسح كافة البيانات بنجاح 🗑️");
+                    alert("تم تصفير المخزن ومسح كافة الأدوية بنجاح 🗑️");
                     setResults([]);
                 } else {
-                    alert("خطأ: " + error.message + " (تأكد من تنفيذ كود SQL أولاً)");
+                    alert("عذراً، تأكد من انتهاء العطل الفني وتشغيل كود SQL أولاً.");
                 }
             };
 
