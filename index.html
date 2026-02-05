@@ -8,112 +8,91 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        :root { --primary: #0984e3; --danger: #d63031; --light: #f5f6fa; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); padding: 20px; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header { text-align: center; border-bottom: 2px solid var(--light); padding-bottom: 10px; }
+        :root { --primary: #0984e3; --danger: #d63031; --bg: #f5f6fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; text-align: right; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
         input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
-        .btn { cursor: pointer; color: white; border: none; font-weight: bold; }
-        .btn-search { background: var(--primary); }
-        .btn-delete { background: var(--danger); }
+        .btn-search { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
+        .btn-delete { background: var(--danger); color: white; border: none; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
-        th { background: var(--light); }
+        th { background: #f8f9fa; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>نظام أدوية مصر 🇪🇬</h1>
-        <p>إدارة المخازن والمنتجات والبحث الشامل</p>
-    </div>
-
+    <h1>نظام أدوية مصر 🇪🇬</h1>
+    <p>إدارة المخازن، البحث، والحذف الجماعي</p>
+    
     <div class="controls">
-        <input type="text" id="drugName" placeholder="بحث عن منتج في كل المخازن...">
+        <input type="text" id="drugName" placeholder="بحث عن اسم المنتج...">
         <select id="warehouseSelect">
             <option value="all">كل المخازن</option>
-            <option value="1">مخزن القاهرة الرئيسي</option>
-            <option value="2">مخزن الإسكندرية</option>
+            <option value="1">المخزن الرئيسي</option>
         </select>
-        <button class="btn btn-search" onclick="searchInventory()">بحث معين</button>
+        <button class="btn-search" onclick="searchInventory()">بحث معين</button>
     </div>
 
-    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button class="btn btn-search" style="background: #27ae60;" onclick="showAddForm()">إدخال منتج يدوي</button>
-        <button class="btn btn-search" style="background: #8e44ad;">إدخال جماعي (CSV)</button>
-        <button class="btn btn-delete" onclick="handleBulkDelete()">⚠️ حذف جماعي للأدوية</button>
-    </div>
+    <button class="btn-delete" onclick="handleBulkDelete()">⚠️ حذف كافة الأدوية نهائياً (تصفير المتجر)</button>
 
     <table>
         <thead>
             <tr>
                 <th>اسم المنتج</th>
                 <th>المخزن</th>
-                <th>السعر الأصلي</th>
-                <th>نسبة الخصم</th>
-                <th>السعر الصافي</th>
-                <th>الإجراء</th>
+                <th>السعر</th>
+                <th>الصافي بعد الخصم</th>
             </tr>
         </thead>
-        <tbody id="dataTable">
-            </tbody>
+        <tbody id="dataTable"></tbody>
     </table>
 </div>
 
 <script>
-    // بيانات الربط المستخرجة من صورك بدقة
+    // بيانات الربط المباشرة المستخرجة من صورك بدقة
     const SB_URL = "https://iksjhjxwphmvthryfpxw.supabase.co"; 
-    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; // ضع المفتاح الطويل الذي يبدأ بـ eyJ هنا
+    // ملاحظة: تأكد من نسخ المفتاح الكامل الذي يبدأ بـ sb_publis من صورتك رقم 5 ووضعه بين العلامتين أدناه
+    const SB_KEY = "ضـع_الـ KEY_الـذي_يـبـدأ_بـ_sb_publis_هـنـا"; 
 
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 1. وظيفة البحث في مخزن معين أو الكل (طلبك)
+    // 1. وظيفة البحث المدمجة (طلبك)
     async function searchInventory() {
         const name = document.getElementById('drugName').value;
         const wh = document.getElementById('warehouseSelect').value;
         
         let query = supabaseClient.from('drugs').select('*');
-        
         if (name) query = query.ilike('name', `%${name}%`);
         if (wh !== 'all') query = query.eq('warehouse_id', wh);
 
         const { data, error } = await query;
-        renderTable(data);
-    }
-
-    // 2. وظيفة الحذف الجماعي (طلبك الدائم)
-    async function handleBulkDelete() {
-        const confirmAction = confirm("⚠️ تنبيه: هل أنت متأكد من حذف كافة الأدوية نهائياً؟");
-        if (confirmAction) {
-            // كود تصفير المخزن
-            const { error } = await supabaseClient.from('drugs').delete().neq('id', 0);
-            if (!error) {
-                alert("تم حذف جميع الأدوية بنجاح.");
-                searchInventory();
-            }
-        }
-    }
-
-    // عرض البيانات في الجدول
-    function renderTable(data) {
+        if (error) { console.error(error); return; }
+        
         const tableBody = document.getElementById('dataTable');
         tableBody.innerHTML = data?.length ? data.map(item => `
             <tr>
                 <td>${item.name}</td>
                 <td>${item.warehouse_id}</td>
                 <td>${item.price} ج.م</td>
-                <td>${item.discount || 0}%</td>
                 <td>${item.price - (item.price * (item.discount || 0) / 100)} ج.م</td>
-                <td><button class="btn-delete" onclick="deleteSingle(${item.id})">حذف</button></td>
             </tr>
-        `).join('') : '<tr><td colspan="6">لا توجد نتائج بحث</td></tr>';
+        `).join('') : '<tr><td colspan="4">لا توجد نتائج</td></tr>';
     }
 
-    // تشغيل البحث عند فتح الصفحة لأول مرة
+    // 2. وظيفة الحذف الجماعي (طلبك الدائم لتصفير الأدوية)
+    async function handleBulkDelete() {
+        if (confirm("هل أنت متأكد من حذف كافة الأدوية؟")) {
+            const { error } = await supabaseClient.from('drugs').delete().neq('id', 0);
+            if (!error) {
+                alert("تم تصفير المخزن بنجاح.");
+                searchInventory();
+            }
+        }
+    }
+
     searchInventory();
 </script>
-
 </body>
 </html>
