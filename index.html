@@ -9,12 +9,12 @@
     
     <style>
         :root { --primary: #0984e3; --danger: #d63031; --bg: #f5f6fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; text-align: right; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
-        input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; outline: none; }
-        .btn-search { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
-        .btn-delete { background: var(--danger); color: white; border: none; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        body { font-family: sans-serif; background: var(--bg); padding: 20px; text-align: right; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .controls { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #ddd; }
+        .btn-search { background: var(--primary); color: white; border: none; cursor: pointer; flex-grow: 1; font-weight: bold; }
+        .btn-delete { background: var(--danger); color: white; border: none; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
         th { background: #f8f9fa; }
@@ -24,10 +24,9 @@
 
 <div class="container">
     <h1>نظام أدوية مصر 🇪🇬</h1>
-    <p>إدارة المخازن، البحث، والحذف الجماعي</p>
     
     <div class="controls">
-        <input type="text" id="drugName" placeholder="بحث عن اسم المنتج...">
+        <input type="text" id="drugName" placeholder="بحث عن اسم المنتج..." style="flex-grow: 2;">
         <select id="warehouseSelect">
             <option value="all">كل المخازن</option>
             <option value="1">المخزن الرئيسي</option>
@@ -35,15 +34,15 @@
         <button class="btn-search" onclick="searchInventory()">بحث معين</button>
     </div>
 
-    <button class="btn-delete" onclick="handleBulkDelete()">⚠️ حذف كافة الأدوية نهائياً (تصفير المتجر)</button>
+    <button class="btn-delete" onclick="handleBulkDelete()">⚠️ حذف كافة الأدوية نهائياً (تصفير)</button>
 
     <table>
         <thead>
             <tr>
-                <th>اسم المنتج</th>
+                <th>المنتج</th>
                 <th>المخزن</th>
                 <th>السعر</th>
-                <th>الصافي بعد الخصم</th>
+                <th>الصافي</th>
             </tr>
         </thead>
         <tbody id="dataTable"></tbody>
@@ -51,14 +50,13 @@
 </div>
 
 <script>
-    // بيانات الربط المباشرة المستخرجة من صورك بدقة
+    // بيانات الربط المستخرجة من حسابك
     const SB_URL = "https://iksjhjxwphmvthryfpxw.supabase.co"; 
-    // ملاحظة: تأكد من نسخ المفتاح الكامل الذي يبدأ بـ sb_publis من صورتك رقم 5 ووضعه بين العلامتين أدناه
-    const SB_KEY = "ضـع_الـ KEY_الـذي_يـبـدأ_بـ_sb_publis_هـنـا"; 
+    // تأكد من وضع المفتاح الكامل الذي يبدأ بـ sb_publis هنا
+    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlrc2poanh3cGhtdnRocnlmcHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1Mjg2NzIsImV4cCI6MjA1NDExMDY3Mn0.your-actual-key"; 
 
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 1. وظيفة البحث المدمجة (طلبك)
     async function searchInventory() {
         const name = document.getElementById('drugName').value;
         const wh = document.getElementById('warehouseSelect').value;
@@ -68,25 +66,24 @@
         if (wh !== 'all') query = query.eq('warehouse_id', wh);
 
         const { data, error } = await query;
-        if (error) { console.error(error); return; }
+        if (error) return;
         
         const tableBody = document.getElementById('dataTable');
-        tableBody.innerHTML = data?.length ? data.map(item => `
+        tableBody.innerHTML = data.map(item => `
             <tr>
                 <td>${item.name}</td>
                 <td>${item.warehouse_id}</td>
                 <td>${item.price} ج.م</td>
                 <td>${item.price - (item.price * (item.discount || 0) / 100)} ج.م</td>
             </tr>
-        `).join('') : '<tr><td colspan="4">لا توجد نتائج</td></tr>';
+        `).join('');
     }
 
-    // 2. وظيفة الحذف الجماعي (طلبك الدائم لتصفير الأدوية)
     async function handleBulkDelete() {
-        if (confirm("هل أنت متأكد من حذف كافة الأدوية؟")) {
+        if (confirm("هل تريد مسح كل الأدوية من قاعدة البيانات؟")) {
             const { error } = await supabaseClient.from('drugs').delete().neq('id', 0);
             if (!error) {
-                alert("تم تصفير المخزن بنجاح.");
+                alert("تم حذف جميع البيانات.");
                 searchInventory();
             }
         }
