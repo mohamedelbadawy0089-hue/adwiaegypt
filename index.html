@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدويا مصر - النظام المدمج</title>
+    <title>أدويا مصر - النظام الموحد</title>
     
     <script type="importmap">
     {
@@ -34,15 +34,15 @@
             const [view, setView] = useState('pharmacy');
             const [results, setResults] = useState([]);
 
-            // 1. وظيفة المسح الشامل (طلبك المحفوظ: حذف الأدوية كل مرة) [cite: 2026-02-01]
+            // 1. وظيفة المسح الشامل (طلبك المحفوظ: مسح الأدوية كل مرة) [cite: 2026-02-01]
             const handleClearEverything = async () => {
-                const warehouseId = 'ضع_هنا_ID_المخزن'; // تأكد من وضعه بعد تنفيذ كود SQL
-                const { error } = await supabase.rpc('delete_all_drugs_every_time', { w_id: warehouseId }); [cite: 2026-02-01]
+                // استبدل 'YOUR_ID' بـ ID المخزن الحقيقي من قاعدة البيانات
+                const { error } = await supabase.rpc('delete_all_drugs_every_time', { w_id: 'YOUR_ID' }); [cite: 2026-02-01]
                 if (!error) {
-                    alert("تم تصفير المخزن بنجاح 🗑️");
+                    alert("تم تصفير المخزن ومسح كافة البيانات بنجاح 🗑️");
                     setResults([]);
                 } else {
-                    alert("خطأ في الاتصال: " + error.message);
+                    alert("خطأ: " + error.message + " (تأكد من تنفيذ كود SQL أولاً)");
                 }
             };
 
@@ -52,18 +52,36 @@
                 setResults(data || []);
             };
 
+            // واجهة المستخدم باستخدام React.createElement كما يظهر في صورك
             return React.createElement('div', null,
-                React.createElement('nav', { style: { display: 'flex', gap: '10px', marginBottom: '20px' } },
-                    React.createElement('button', { onClick: () => setView('pharmacy'), style: { padding: '10px', borderRadius: '5px' } }, 'بحث الصيدليات 🛒'),
-                    React.createElement('button', { onClick: () => setView('warehouse'), style: { padding: '10px', background: '#dc3545', color: '#fff', borderRadius: '5px' } }, 'إدارة المخزن ⚙️')
+                React.createElement('nav', { style: { display: 'flex', gap: '15px', marginBottom: '25px' } },
+                    React.createElement('button', { 
+                        onClick: () => setView('pharmacy'), 
+                        style: { padding: '12px', background: view === 'pharmacy' ? '#007bff' : '#fff', color: view === 'pharmacy' ? '#fff' : '#333', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer' } 
+                    }, 'البحث والشراء 🛒'),
+                    React.createElement('button', { 
+                        onClick: () => setView('warehouse'), 
+                        style: { padding: '12px', background: view === 'warehouse' ? '#dc3545' : '#fff', color: view === 'warehouse' ? '#fff' : '#333', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer' } 
+                    }, 'إدارة المخزن ⚙️')
                 ),
                 view === 'pharmacy' ? 
                 React.createElement('div', null,
-                    React.createElement('input', { type: 'text', placeholder: 'ابحث عن دواء بخصم...', style: { width: '100%', padding: '10px' }, onChange: (e) => handleSearch(e.target.value) }),
-                    results.map(p => React.createElement('div', { key: p.id, style: { background: '#fff', margin: '10px 0', padding: '10px' } }, p.product_name))
+                    React.createElement('input', { 
+                        type: 'text', 
+                        placeholder: 'ابحث عن اسم الدواء بخصوماته...', 
+                        style: { width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #ccc' },
+                        onChange: (e) => handleSearch(e.target.value) 
+                    }),
+                    results.map(p => React.createElement('div', { key: p.id, style: { background: '#fff', margin: '10px 0', padding: '15px', borderRadius: '12px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' } }, 
+                        React.createElement('h3', null, p.product_name),
+                        React.createElement('button', { style: { background: '#007bff', color: 'white', border: 'none', padding: '10px', borderRadius: '5px' } }, 'شراء')
+                    ))
                 ) : 
-                React.createElement('div', { style: { textAlign: 'center' } },
-                    React.createElement('button', { onClick: handleClearEverything, style: { padding: '20px', background: '#dc3545', color: '#fff', fontSize: '18px' } }, 'مسح كافة الأدوية فوراً 🗑️')
+                React.createElement('div', { style: { textAlign: 'center', marginTop: '50px' } },
+                    React.createElement('button', { 
+                        onClick: handleClearEverything, 
+                        style: { padding: '25px 50px', background: '#dc3545', color: '#fff', fontSize: '20px', border: 'none', borderRadius: '20px', cursor: 'pointer', boxShadow: '0 5px 15px rgba(220,53,69,0.3)' } 
+                    }, 'مسح كافة الأدوية فوراً 🗑️')
                 )
             );
         }
