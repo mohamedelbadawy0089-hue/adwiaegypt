@@ -1,140 +1,84 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدوية مصر - النظام الذكي الموحد</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        :root { 
-            --main: #0984e3; 
-            --pharmacy: #00b894; 
-            --voice: #6c5ce7; 
-            --order: #d63031; 
-        }
-        body { 
-            font-family: 'Segoe UI', Tahoma, sans-serif; 
-            background: #f0f2f5; 
-            margin: 0; 
-            padding: 20px; 
-            direction: rtl; 
-        }
-        .container { 
-            max-width: 1000px; 
-            margin: auto; 
-            background: white; 
-            padding: 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-        }
-        .card { 
-            background: #fff; 
-            padding: 20px; 
-            border-radius: 12px; 
-            margin-bottom: 20px; 
-            border: 1px solid #ddd; 
-        }
-        input, button { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 8px 0; 
-            border-radius: 8px; 
-            border: 1px solid #ddd; 
-        }
-        button { 
-            background: var(--main); 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            font-weight: bold; 
-        }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
-        th { background: var(--main); color: white; }
-    </style>
-</head>
-<body>
+import { createClient } from '@supabase/supabase-js';
+import { useState } from 'react';
 
-<div class="container">
-    <h1 style="text-align:center;">🇪🇬 أدوية مصر</h1>
-    
-    <div class="card">
-        <h3>📦 تحديث بيانات المخزن</h3>
-        <input type="file" id="excelFile" accept=".xlsx, .xls">
-        <input type="text" id="warehouseId" placeholder="كود المخزن">
-        <button onclick="uploadData()">تحديث المخزون</button>
-    </div>
+// --- بيانات مشروعك المستخرجة من الصور ---
+const SUPABASE_URL = 'https://hess14677-netizen.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlc3MxNDY3Ny1uZXRpemVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY4MjY0MTgsImV4cCI6MjAyMjQwMjQxOH0.example_key';
 
-    <div class="card">
-        <h3>🔍 بحث الصيدليات</h3>
-        <input type="text" id="searchInput" placeholder="ابحث عن دواء..." onkeyup="loadData()">
-    </div>
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <table id="resultsTable">
-        <thead>
-            <tr>
-                <th>الدواء</th>
-                <th>المخزن</th>
-                <th>السعر</th>
-            </tr>
-        </thead>
-        <tbody id="dataTable"></tbody>
-    </table>
-</div>
+export default function AdwaaEgyptApp() {
+  const [view, setView] = useState('pharmacy'); 
+  const [results, setResults] = useState([]);
+  const [cart, setCart] = useState([]);
 
-<script>
-    const supabaseUrl = "https://iksjhjxwphmvthryfpxw.supabase.co";
-    const supabaseKey = "eyJhcmciOiJmYXN0YXBpIiwidHlwIjoiSldUIiwiYWxnIjoiSFMyNTYifQ.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlrc2poanh3cGhtdnRocnlmcHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg0MTk3MDMsImV4cCI6MjA1NDAwNTcwM30.F_D_9_Y_your_full_key_here";
-    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-    async function uploadData() {
-        const file = document.getElementById('excelFile').files[0];
-        const w_id = document.getElementById('warehouseId').value;
-        if (!file || !w_id) return alert("اكمل البيانات");
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            
-            const processed = jsonData.map(item => ({
-                name: item.name || item['الاسم'] || item['الصنف'],
-                price: parseFloat(item.price || item['السعر'] || item['Price']),
-                warehouse_id: w_id
-            })).filter(i => i.name && i.price);
-
-            // حذف القديم قبل رفع الجديد لضمان عدم التكرار كما في صورك
-            await supabaseClient.from('drugs').delete().eq('warehouse_id', w_id);
-            
-            const { error } = await supabaseClient.from('drugs').insert(processed);
-            if (!error) { 
-                alert("تم التحديث بنجاح ✅"); 
-                loadData(); 
-            }
-        };
-        reader.readAsArrayBuffer(file);
+  // 1. وظيفة المسح الشامل (طلبك المحفوظ)
+  const handleClearEverything = async (warehouseId) => {
+    const { error } = await supabase.rpc('delete_all_drugs_every_time', { w_id: warehouseId });
+    if (!error) {
+      alert("تم مسح كافة الأدوية بنجاح من المخزن 🗑️");
+      setResults([]);
+    } else {
+      alert("حدث خطأ، تأكد من انتهاء عطل Supabase وتشغيل كود SQL.");
     }
+  };
 
-    async function loadData() {
-        const term = document.getElementById('searchInput').value;
-        let query = supabaseClient.from('drugs').select('*').order('price', { ascending: true });
-        if (term) query = query.ilike('name', `%${term}%`);
-        
-        const { data } = await query;
-        const tbody = document.getElementById('dataTable');
-        tbody.innerHTML = (data || []).map(item => `
-            <tr>
-                <td>${item.name}</td>
-                <td>${item.warehouse_id}</td>
-                <td>${item.price} ج.م</td>
-            </tr>
-        `).join('');
+  // 2. وظيفة البحث والشراء للصيدلية
+  const handleSearch = async (val) => {
+    const { data } = await supabase.from('products')
+      .select('*, warehouses(*)')
+      .textSearch('search_vector', val)
+      .order('discount_percentage', { ascending: false });
+    setResults(data || []);
+  };
+
+  const confirmOrder = async () => {
+    if (cart.length === 0) return;
+    const { error } = await supabase.from('orders').insert([{
+      warehouse_id: cart[0].warehouse_id,
+      total_amount: cart.reduce((s, i) => s + i.price, 0),
+      items: cart,
+      pharmacy_name: 'صيدلية النيل'
+    }]);
+    if (!error) {
+      alert("تم إرسال طلب الشراء للمخزن بنجاح ✅");
+      setCart([]);
     }
+  };
 
-    // تشغيل تحميل البيانات تلقائيًا عند الفتح كما في السطر 154 بصورك
-    loadData();
-</script>
-</body>
-</html>
+  return (
+    <div dir="rtl" style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', minHeight: '100vh' }}>
+      <header style={{ marginBottom: '30px', display: 'flex', gap: '15px', justifyContent: 'center' }}>
+        <button onClick={() => setView('pharmacy')} style={{ padding: '12px 20px', background: view === 'pharmacy' ? '#007bff' : '#fff', color: view === 'pharmacy' ? 'white' : '#333', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>شاشة الصيدلية (شراء)</button>
+        <button onClick={() => setView('warehouse')} style={{ padding: '12px 20px', background: view === 'warehouse' ? '#dc3545' : '#fff', color: view === 'warehouse' ? 'white' : '#333', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>شاشة المخزن (إدارة)</button>
+      </header>
+
+      {view === 'pharmacy' ? (
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <input type="text" placeholder="ابحث عن دواء بخصوماته..." style={{ width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #ccc' }}
+                 onChange={(e) => handleSearch(e.target.value)} />
+          <div style={{ marginTop: '20px' }}>
+            {results.map(p => (
+              <div key={p.id} style={{ background: 'white', padding: '15px', borderRadius: '12px', marginBottom: '10px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0 }}>{p.product_name}</h3>
+                  <p style={{ color: '#28a745', fontWeight: 'bold', margin: '5px 0' }}>خصم {p.discount_percentage}% | السعر: {p.price} ج.م</p>
+                </div>
+                <button onClick={() => setCart([...cart, p])} style={{ background: '#007bff', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '5px', cursor: 'pointer' }}>شراء 🛒</button>
+              </div>
+            ))}
+          </div>
+          {cart.length > 0 && <button onClick={confirmOrder} style={{ position: 'fixed', bottom: '20px', left: '20px', right: '20px', padding: '18px', background: '#28a745', color: 'white', borderRadius: '15px', fontSize: '18px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>تأكيد الشراء لـ {cart.length} أصناف</button>}
+        </div>
+      ) : (
+        <div style={{ textAlign: 'center', marginTop: '100px' }}>
+          <h2 style={{ color: '#333' }}>لوحة إدارة مخزن أدويا مصر</h2>
+          <p style={{ color: '#666', marginBottom: '30px' }}>استخدم الزر أدناه لمسح كل البيانات وتصفير المخزن</p>
+          <button onClick={() => handleClearEverything('ضع_هنا_ID_المخزن')} style={{ background: '#dc3545', color: 'white', padding: '25px 50px', fontSize: '20px', borderRadius: '20px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)' }}>
+             مسح كافة الأدوية من النظام فوراً 🗑️
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
