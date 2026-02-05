@@ -3,57 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أدوية مصر - النظام الذكي الموحد</title>
+    <title>أدوية مصر - النظام الذكي المتكامل</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        :root { --main: #0984e3; --pharmacy: #00b894; --danger: #d63031; --voice: #e67e22; }
+        :root { --main: #0984e3; --pharmacy: #00b894; --danger: #d63031; --voice: #6c5ce7; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; direction: rtl; }
         .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
         .card { background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #eee; }
-        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-weight: bold; }
-        .btn-main { background: var(--main); color: white; border: none; cursor: pointer; }
-        .btn-voice { background: var(--voice); color: white; border: none; cursor: pointer; }
-        .btn-danger { background: var(--danger); color: white; border: none; cursor: pointer; }
-        .btn-success { background: var(--pharmacy); color: white; border: none; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-weight: bold; }
+        .btn-main { background: var(--main); color: white; border: none; cursor: pointer; transition: 0.3s; }
+        .btn-main:hover { transform: scale(1.01); opacity: 0.9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
         th { background: var(--main); color: white; }
-        .search-box { border: 2px solid var(--pharmacy); background: #f0fff4; }
+        .best-price { background: #eafff2 !important; border: 2px solid var(--pharmacy); font-weight: bold; color: #27ae60; }
+        
+        /* الأيقونة الصوتية الثابتة */
+        #gemini-assistant { 
+            position: fixed; bottom: 30px; left: 30px; width: 70px; height: 70px; 
+            background: var(--voice); border-radius: 50%; display: flex; align-items: center; 
+            justify-content: center; cursor: pointer; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.4); 
+            border: 3px solid white; transition: 0.3s; 
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(108, 92, 231, 0); } 100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); } }
+        .listening { animation: pulse 1.5s infinite; background: #ff7675 !important; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div style="text-align: center; border-bottom: 3px solid var(--main); margin-bottom: 25px;">
-        <h1>نظام أدوية مصر الشامل 🇪🇬</h1>
-        <p>إدارة مخازن ذكية وبحث فوري للصيدليات</p>
+        <h1>نظام أدوية مصر الذكي 🇪🇬</h1>
+        <p>المساعد الآلي (البحث الذكي للصيدليات وسحب شيتات المخازن)</p>
     </div>
 
     <div class="card">
-        <h3>📦 بوابة المخازن: رفع وتحديث المنتجات</h3>
-        <label>رفع ملف إكسيل (يجب أن يحتوي على name و price):</label>
+        <h3>📦 بوابة المخازن: تحديث المخزون الذكي</h3>
+        <p style="font-size: 0.85em; color: #555;">ارفع أي شيت إكسيل (سأقوم بفهم الأعمدة تلقائياً ومسح بياناتك القديمة لرفع الجديدة).</p>
         <input type="file" id="excelFile" accept=".xlsx, .xls">
-        <input type="text" id="warehouseId" placeholder="أدخل كود المخزن (مثال: 101)">
-        <button class="btn-main" onclick="uploadExcel()">📂 رفع شيت الإكسيل بالكامل</button>
-        <hr>
-        <button class="btn-danger" onclick="bulkDelete()">🗑️ حذف كافة أدوية هذا المخزن (تصفير)</button>
+        <input type="text" id="warehouseId" placeholder="أدخل كود المخزن الخاص بك (مثلاً: 101)">
+        <button class="btn-main" onclick="handleSmartUpload()">📂 سحب الشيت وتحديث القائمة فوراً</button>
     </div>
 
-    <div class="card search-box">
-        <h3 style="color: var(--pharmacy);">🔍 بوابة الصيدليات: البحث الذكي</h3>
-        <input type="text" id="searchInput" placeholder="اكتب اسم الدواء هنا..." onkeyup="loadData()">
-        <button class="btn-voice" onclick="startVoice()">🎙️ ابحث بصوتك</button>
+    <div class="card" style="border: 2px solid var(--pharmacy);">
+        <h3 style="color: var(--pharmacy);">🔍 الصيدليات: ابحث عن دواء وأقل سعر في السوق</h3>
+        <input type="text" id="searchInput" placeholder="اكتب اسم الدواء هنا لمقارنة المخازن..." onkeyup="loadData()">
     </div>
 
-    <table>
+    <table id="resultsTable">
         <thead>
             <tr>
                 <th>اسم الدواء</th>
-                <th>كود المخزن</th>
-                <th>السعر (ج.م)</th>
+                <th>المخزن</th>
+                <th>السعر</th>
                 <th>إجراء</th>
             </tr>
         </thead>
@@ -61,98 +66,101 @@
     </table>
 </div>
 
+<div id="gemini-assistant" onclick="activateVoice()">
+    <span style="font-size: 30px;">🎙️</span>
+</div>
+
 <script>
-    // بيانات الربط (URL & Key) الخاصة بمشروعك
+    // بيانات الربط المباشرة
     const SB_URL = "https://iksjhjxwphmvthryfpxw.supabase.co";
     const SB_KEY = "eyJh......"; // ضع هنا الـ Anon Key الكامل الخاص بك
 
     const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
 
-    // 1. وظيفة الرفع الجماعي من الإكسيل
-    function uploadExcel() {
+    // 1. محرك "سحب الشيت" الذكي (يفهم كل أنواع الإكسيل في السوق)
+    async function handleSmartUpload() {
         const file = document.getElementById('excelFile').files[0];
         const w_id = document.getElementById('warehouseId').value;
-
-        if (!file || !w_id) return alert("يرجى اختيار الملف وإدخال كود المخزن!");
+        if (!file || !w_id) return alert("يرجى اختيار ملف وكتابة كود المخزن");
 
         const reader = new FileReader();
         reader.onload = async (e) => {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(sheet);
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            
+            // تحليل الأعمدة بذكاء لتناسب أي شيت في السوق
+            const processedData = jsonData.map(item => {
+                const name = item.name || item['الاسم'] || item['الصنف'] || item['اسم الصنف'] || item['المنتج'] || item['Item'];
+                const price = item.price || item['السعر'] || item['سعر الجمهور'] || item['Price'] || item['ليستة'];
+                return { name, price: parseFloat(price), warehouse_id: w_id };
+            }).filter(i => i.name && i.price);
 
-            const finalData = jsonData.map(item => ({
-                name: item.name,
-                price: item.price,
-                warehouse_id: w_id
-            }));
+            if (processedData.length === 0) return alert("لم أستطع فهم أعمدة الملف. تأكد من وجود اسم وسعر.");
 
-            const { error } = await supabaseClient.from('drugs').insert(finalData);
+            // تنفيذ المسح ثم الرفع (الإحلال والتجديد)
+            await supabaseClient.from('drugs').delete().eq('warehouse_id', w_id);
+            const { error } = await supabaseClient.from('drugs').insert(processedData);
+
             if (!error) {
-                alert(`تم رفع ${finalData.length} صنف بنجاح ✅`);
+                speakAssistant(`تم تحديث مخزنك بـ ${processedData.length} صنف جديد ومسح القائمة القديمة`);
+                alert("تم التحديث بنجاح ✅");
                 loadData();
-            } else {
-                alert("خطأ: تأكد من تسمية أعمدة الإكسيل (name) و (price)");
             }
         };
         reader.readAsArrayBuffer(file);
     }
 
-    // 2. وظيفة البحث الصوتي [طلب التفاعل الصوتي]
-    function startVoice() {
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'ar-EG';
-        recognition.start();
-        recognition.onresult = (event) => {
-            const speechToText = event.results[0][0].transcript;
-            document.getElementById('searchInput').value = speechToText;
-            loadData();
-        };
-    }
-
-    // 3. جلب البيانات والبحث الفوري
+    // 2. محرك البحث الذكي (مقارنة الأسعار للصيدليات)
     async function loadData() {
         const term = document.getElementById('searchInput').value;
-        let query = supabaseClient.from('drugs').select('*');
+        // ترتيب تصاعدي (الأرخص أولاً)
+        let query = supabaseClient.from('drugs').select('*').order('price', { ascending: true });
         if (term) query = query.ilike('name', `%${term}%`);
 
         const { data } = await query;
         const tbody = document.getElementById('dataTable');
-        tbody.innerHTML = data ? data.map(item => `
-            <tr>
+        tbody.innerHTML = data ? data.map((item, index) => `
+            <tr class="${index === 0 && term ? 'best-price' : ''}">
                 <td><b>${item.name}</b></td>
-                <td>${item.warehouse_id}</td>
-                <td>${item.price}</td>
-                <td><button onclick="deleteSingle('${item.id}')" style="color:red; cursor:pointer; background:none; border:none;">حذف</button></td>
+                <td>🏢 مخزن: ${item.warehouse_id}</td>
+                <td>${item.price} ج.م ${index === 0 && term ? '⭐ (أرخص عرض)' : ''}</td>
+                <td><button onclick="deleteSingle('${item.id}')" style="color:red; background:none; border:none; cursor:pointer;">حذف</button></td>
             </tr>
         `).join('') : '';
     }
 
-    // 4. تصفير مخزن بالكامل [طلب تصفير المخزن]
-    async function bulkDelete() {
-        const w_id = document.getElementById('warehouseId').value;
-        if (!w_id) return alert("أدخل كود المخزن أولاً!");
-        
-        if (confirm(`هل أنت متأكد من حذف كافة أدوية المخزن ${w_id}؟`)) {
-            const { error } = await supabaseClient.from('drugs').delete().eq('warehouse_id', w_id);
-            if (!error) {
-                alert("تم تصفير المخزن بنجاح ✅");
-                loadData();
-            }
-        }
+    // 3. المساعد الصوتي التفاعلي
+    function activateVoice() {
+        const btn = document.getElementById('gemini-assistant');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'ar-EG';
+        recognition.onstart = () => btn.classList.add('listening');
+        recognition.onresult = (event) => {
+            const voiceText = event.results[0][0].transcript;
+            document.getElementById('searchInput').value = voiceText;
+            loadData();
+            speakAssistant(`أبشر يا محمد، أبحث لك عن ${voiceText} وأقارن لك أسعار المخازن حالاً.`);
+            btn.classList.remove('listening');
+        };
+        recognition.onerror = () => btn.classList.remove('listening');
+        recognition.start();
     }
 
-    // 5. حذف صنف واحد
+    function speakAssistant(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'ar-EG';
+        window.speechSynthesis.speak(msg);
+    }
+
     async function deleteSingle(id) {
-        if (confirm("حذف هذا الصنف؟")) {
+        if(confirm("حذف الصنف؟")) {
             await supabaseClient.from('drugs').delete().eq('id', id);
             loadData();
         }
     }
 
-    loadData(); // تحميل أولي للبيانات
+    loadData();
 </script>
-
 </body>
 </html>
