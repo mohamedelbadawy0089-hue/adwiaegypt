@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم</title>
+    <script src="navigation.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .info-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+        .info-value {
+            color: #333;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+        <h1 id="welcomeMsg">مرحباً</h1>
+        <p>لوحة التحكم الخاصة بك</p>
+    </div>
+    
+    <div class="container">
+        <div class="info-card">
+            <h2>معلومات المخزن</h2>
+            <div class="info-row">
+                <span class="info-label">اسم المخزن:</span>
+                <span class="info-value" id="warehouseName"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">التليفون:</span>
+                <span class="info-value" id="phone"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">المحافظة:</span>
+                <span class="info-value" id="governorate"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">الإيميل:</span>
+                <span class="info-value" id="email"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">تاريخ التسجيل:</span>
+                <span class="info-value" id="registeredAt"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">آخر تسجيل دخول:</span>
+                <span class="info-value" id="lastLogin"></span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">حالة الحساب:</span>
+                <span class="info-value" id="status"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // التحقق من تسجيل الدخول
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        } else {
+            // عرض معلومات المستخدم
+            document.getElementById('welcomeMsg').textContent = 'مرحباً ' + currentUser.warehouseName;
+            document.getElementById('warehouseName').textContent = currentUser.warehouseName;
+            document.getElementById('phone').textContent = currentUser.phone;
+            document.getElementById('governorate').textContent = currentUser.governorate;
+            document.getElementById('email').textContent = currentUser.email;
+            
+            if (currentUser.registeredAt) {
+                const date = new Date(currentUser.registeredAt);
+                document.getElementById('registeredAt').textContent = date.toLocaleDateString('ar-EG');
+            }
+            
+            if (currentUser.lastLogin) {
+                const lastLoginDate = new Date(currentUser.lastLogin);
+                document.getElementById('lastLogin').textContent = lastLoginDate.toLocaleString('ar-EG');
+            } else {
+                document.getElementById('lastLogin').textContent = 'أول تسجيل دخول';
+            }
+            
+            document.getElementById('status').textContent = currentUser.status === 'active' ? 'نشط' : 'غير نشط';
+        }
+        
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'warehouse.html';
+        }
+    </script>
+</body>
+</html>

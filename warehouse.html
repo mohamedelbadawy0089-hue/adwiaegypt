@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse</title>
+    <script src="navigation.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg, #ff6b6b, #dc3545);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.5);
+            transition: all 0.3s;
+            border: 3px solid white;
+            z-index: 1000;
+            outline: none;
+            user-select: none;
+        }
+        .back-arrow:hover {
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.7);
+        }
+        .back-arrow:active {
+            transform: scale(0.95);
+        }
+        .container {
+            text-align: center;
+        }
+        button {
+            padding: 15px 40px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .register {
+            background-color: #28a745;
+        }
+        .register:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-arrow" onclick="goBack()" title="رجوع">←</div>
+    <div class="container">
+        <!-- اختيار المخزن تم حذفه -->
+        <button onclick="login()">Login</button>
+        <button class="register" onclick="register()">Register</button>
+                
+        <!-- Order Display Section -->
+        <div class="order-section" style="margin-top: 30px;">
+            <h2 style="margin-bottom: 20px;">طلبات المخزن</h2>
+            <div id="ordersContainer" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Orders will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function login() {
+            window.location.replace('login.html');
+        }
+
+        function register() {
+            window.location.replace('register.html');
+        }
+
+        function goBack() {
+            window.location.replace('A.html');
+        }
+    </script>
+
+    <script src="ai-core.js"></script>
+    <script src="ai-validation.js"></script>
+    <script src="ai-speech.js"></script>
+    <script src="ai-database.js"></script>
+    <script src="ai-ui.js"></script>
+    <script src="ai-assistant.js"></script>
+    
+    <!-- Order Management Scripts -->
+    <script src="order-management.js"></script>
+</body>
+</html>

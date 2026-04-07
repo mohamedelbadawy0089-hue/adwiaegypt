@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدخال جماعي للمنتجات</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .back-arrow {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg, #ff6b6b, #dc3545);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.5);
+            transition: all 0.3s;
+            border: 3px solid white;
+            z-index: 1000;
+            outline: none;
+            user-select: none;
+        }
+        .back-arrow:hover {
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.7);
+        }
+        .back-arrow:active {
+            transform: scale(0.95);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 700px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            background: #e8e9ff;
+            border-color: #764ba2;
+        }
+        .upload-area.dragover {
+            background: #d8d9ff;
+            border-color: #764ba2;
+        }
+        .upload-icon {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+        .upload-text {
+            font-size: 18px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .upload-hint {
+            font-size: 14px;
+            color: #666;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .file-name {
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        .template-section {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .template-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .template-btn {
+            background: #ffc107;
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .template-btn:hover {
+            background: #ffb300;
+        }
+        .format-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+        .format-info ul {
+            margin: 10px 0;
+            padding-right: 20px;
+        }
+        .format-info li {
+            margin: 5px 0;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress {
+            display: none;
+            margin-top: 20px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-arrow" onclick="goBack()" title="رجوع">←</div>
+    <div class="container">
+        <h2>إدخال جماعي للمنتجات</h2>
+        
+        <div class="template-section">
+            <div class="template-title">📥 تحميل نموذج الملف</div>
+            <p>قم بتحميل ملف Excel نموذجي لتعبئة بيانات المنتجات</p>
+            <button class="template-btn" onclick="downloadTemplate()">تحميل النموذج</button>
+        </div>
+        
+        <div class="format-info">
+            <strong>📋 يدعم أي ملف من برامج إدارة المخازن</strong>
+            <p>النظام يتعرف تلقائياً على أسماء الأعمدة بالعربية أو الإنجليزية</p>
+            <strong>أسماء الأعمدة المقبولة:</strong>
+            <ul>
+                <li><strong>المنتج:</strong> اسم المنتج، المنتج، الصنف، Product, Item, Name</li>
+                <li><strong>السعر:</strong> السعر، سعر البيع، Price, Selling Price</li>
+                <li><strong>الخصم:</strong> نسبة الخصم، الخصم، Discount</li>
+                <li><strong>الكمية:</strong> الكمية، الرصيد، المخزون، Quantity, Stock, Qty</li>
+                <li><strong>الإنتاج:</strong> تاريخ الإنتاج، الإنتاج، Production Date، Mfg Date</li>
+                <li><strong>الانتهاء:</strong> تاريخ الانتهاء، الانتهاء، الصلاحية، Expiry Date</li>
+            </ul>
+        </div>
+        
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">اضغط لاختيار ملف أو اسحبه هنا</div>
+            <div class="upload-hint">يدعم: Excel (.xlsx, .xls) و CSV (.csv)</div>
+        </div>
+        
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)">
+        
+        <div class="file-info" id="fileInfo">
+            <div>الملف المختار: <span class="file-name" id="fileName"></span></div>
+        </div>
+        
+        <button id="uploadBtn" onclick="processFile()" disabled>رفع وإضافة المنتجات</button>
+        
+        <div class="progress" id="progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (!currentUser) window.location.replace('login.html');
+        
+        let db;
+        let selectedFile = null;
+        
+        function initDB() {
+            const request = indexedDB.open('WarehouseDB', 5);
+            request.onupgradeneeded = function(e) {
+                const d = e.target.result;
+                if (!d.objectStoreNames.contains('products')) {
+                    const store = d.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('userId', 'userId', { unique: false });
+                    store.createIndex('productName', 'productName', { unique: false });
+                }
+            };
+            request.onsuccess = function() { db = request.result; };
+            request.onerror = function() { db = null; };
+        }
+        initDB();
+        
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+        });
+        
+        function handleFileSelect(event) {
+            if (event.target.files[0]) handleFile(event.target.files[0]);
+        }
+        
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+                alert('يرجى اختيار ملف Excel أو CSV');
+                return;
+            }
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('uploadBtn').disabled = false;
+        }
+        
+        function downloadTemplate() {
+            const wb = XLSX.utils.book_new();
+            const wsData = [
+                ['اسم المنتج', 'السعر', 'نسبة الخصم', 'الكمية', 'تاريخ الإنتاج', 'تاريخ الانتهاء'],
+                ['باراسيتامول 500', '50.50', '10', '100', '2024-01-01', '2026-01-01'],
+                ['أسبرين 100', '25.75', '5', '', '2024-02-01', '2025-12-01']
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, 'المنتجات');
+            XLSX.writeFile(wb, 'نموذج_المنتجات.xlsx');
+        }
+        
+        function processFile() {
+            if (!selectedFile) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, raw: false });
+                    
+                    if (jsonData.length < 2) { alert('الملف فارغ'); return; }
+                    
+                    const headers = jsonData[0].map(h => h ? h.toString().trim() : '');
+                    
+                    // استخدام محرك المساعد الذكي لربط الأعمدة
+                    let map;
+                    if (window.AICore && typeof window.AICore.smartMapHeaders === 'function') {
+                        const smartResult = window.AICore.smartMapHeaders(headers);
+                        map = smartResult.map;
+                        
+                        // رسالة استباقية من المساعد
+                        if (window.AIUI) {
+                            let msg = `✅ <strong>تم التعرف على بنية ملف (${smartResult.software.name}):</strong><br>`;
+                            msg += `قمت بضبط الأعمدة تلقائياً:<br>`;
+                            if (map.productName !== -1) msg += `• الاسم ← عمود رقم ${map.productName + 1}<br>`;
+                            if (map.price !== -1) msg += `• السعر ← عمود رقم ${map.price + 1}<br>`;
+                            if (map.quantity !== -1) msg += `• الرصيد ← عمود رقم ${map.quantity + 1}<br>`;
+                            
+                            window.AIUI.addMessage(msg, 'bot', true);
+                            if (window.AISpeech) window.AISpeech.speak(`تم التعرف على ملف ${smartResult.software.name}، وجاري معالجة البيانات`);
+                        }
+                    } else {
+                        // Fallback logic
+                        map = { productName: 0, price: 1, discount: 2, quantity: 3, productionDate: 4, expiryDate: 5 };
+                    }
+                    
+                    // معالجة القيم -1 لتجنب الأخطاء (Legacy support)
+                    Object.keys(map).forEach(key => { if (map[key] === -1) map[key] = null; });
+
+                    if (map.productName === null || map.price === null) {
+                        alert('عذراً، لم أستطع تحديد عمود "اسم المنتج" أو "السعر" تلقائياً. يرجى التأكد من رؤوس الأعمدة.');
+                        return;
+                    }
+                    
+                    const products = [];
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (!row || !row[map.productName] || !row[map.price] || row[map.discount] === undefined) continue;
+                        
+                        const qty = map.quantity !== null && row[map.quantity] ? parseInt(row[map.quantity]) : null;
+                        products.push({
+                            userId: currentUser.email,
+                            warehouseName: currentUser.warehouseName,
+                            productName: row[map.productName].toString().trim(),
+                            price: parseFloat(row[map.price]) || 0,
+                            discount: map.discount !== null ? (parseFloat(row[map.discount]) || 0) : 0,
+                            quantity: qty,
+                            isUnlimited: !qty,
+                            barcode: map.barcode !== null ? row[map.barcode].toString().trim() : null,
+                            lowStockAlert: null,
+                            productionDate: map.productionDate !== null ? row[map.productionDate] : null,
+                            expiryDate: map.expiryDate !== null ? row[map.expiryDate] : null,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                    
+                    if (products.length === 0) { alert('لم يتم العثور على منتجات صالحة'); return; }
+                    saveProducts(products);
+                } catch (error) {
+                    alert('حدث خطأ: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(selectedFile);
+        }
+        
+        function saveProducts(products) {
+            document.getElementById('progress').style.display = 'block';
+            document.getElementById('uploadBtn').disabled = true;
+            const total = products.length;
+
+            // حفظ في localStorage دائماً
+            const existing = JSON.parse(localStorage.getItem('products')) || [];
+            const baseId = Date.now();
+            products.forEach((p, i) => { p.id = baseId + i; });
+            existing.push(...products);
+            localStorage.setItem('products', JSON.stringify(existing));
+
+            // حفظ في IndexedDB إن كان متاحاً
+            if (!db) {
+                updateProgress(total, total);
+                setTimeout(() => { alert(`تم إضافة ${total} منتج بنجاح`); resetForm(); }, 300);
+                return;
+            }
+
+            let saved = 0;
+            const batchSize = 2000;
+            let currentBatch = 0;
+
+            function processBatch() {
+                const batch = products.slice(currentBatch * batchSize, Math.min((currentBatch + 1) * batchSize, total));
+                if (batch.length === 0) {
+                    setTimeout(() => { alert(`تم إضافة ${saved} منتج بنجاح`); resetForm(); }, 500);
+                    return;
+                }
+                try {
+                    const transaction = db.transaction(['products'], 'readwrite');
+                    const objectStore = transaction.objectStore('products');
+                    batch.forEach(product => {
+                        const req = objectStore.add(product);
+                        req.onsuccess = () => { saved++; updateProgress(saved, total); };
+                        req.onerror = () => { saved++; updateProgress(saved, total); };
+                    });
+                    transaction.oncomplete = () => { currentBatch++; setTimeout(processBatch, 50); };
+                    transaction.onerror = () => { currentBatch++; setTimeout(processBatch, 50); };
+                } catch(e) {
+                    currentBatch++;
+                    setTimeout(processBatch, 50);
+                }
+            }
+            processBatch();
+        }
+        
+        function updateProgress(current, total) {
+            const percent = Math.round((current / total) * 100);
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressFill').textContent = percent + '%';
+        }
+        
+        function resetForm() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('progress').style.display = 'none';
+            document.getElementById('progressFill').style.width = '0%';
+        }
+        
+        function goBack() { window.location.replace('products.html'); }
+    </script>
+    <script src="ai-core.js"></script>
+    <script src="ai-validation.js"></script>
+    <script src="ai-speech.js"></script>
+    <script src="ai-database.js"></script>
+    <script src="ai-ui.js"></script>
+    <script src="ai-assistant.js"></script>
+</body>
+</html>

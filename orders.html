@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الأوردرات</title>
+    <script src="navigation.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .back-arrow {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg, #ff6b6b, #dc3545);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.5);
+            transition: all 0.3s;
+            border: 3px solid white;
+            z-index: 1000;
+            outline: none;
+            user-select: none;
+        }
+        .back-arrow:hover {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.7);
+        }
+        .back-arrow:active {
+            transform: scale(0.95);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+        }
+        .stat-card.total {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        .stat-card.today {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .stat-card.cash {
+            background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+        }
+        .search-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px solid #667eea;
+        }
+        .search-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .search-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        input, select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-search {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-reset {
+            background: #6c757d;
+            color: white;
+            width: 100%;
+        }
+        .btn-reset:hover {
+            background: #5a6268;
+        }
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            padding: 12px;
+            text-align: right;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: right;
+        }
+        tr:hover {
+            background: #f0fff4;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .badge-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .btn-whatsapp {
+            background: #25d366;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+        .btn-whatsapp:hover {
+            background: #1da851;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        .delivery-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .delivery-item {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .delivery-item:hover {
+            border-color: #25d366;
+            background: #f0fff4;
+        }
+        .delivery-item.selected {
+            border-color: #25d366;
+            background: #e6f9ed;
+        }
+        .delivery-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .delivery-phone {
+            color: #666;
+            font-size: 14px;
+        }
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .btn-modal {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-send {
+            background: #25d366;
+            color: white;
+        }
+        .btn-send:hover {
+            background: #1da851;
+        }
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+        .btn-accept {
+            background: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .btn-accept:hover {
+            background: #218838;
+        }
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .btn-reject:hover {
+            background: #c82333;
+        }
+        .btn-delete-order {
+            background: #6c757d;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .btn-details { background: #17a2b8; color: white; padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-left: 5px; }
+        .order-details-row { background: #f8f9ff; }
+        .order-details-box { padding: 15px; border-top: 2px solid #667eea; }
+        .order-details-box table { margin-top: 8px; font-size: 13px; }
+        .order-details-box th { background: #667eea; padding: 8px; font-size: 12px; }
+        .order-details-box td { padding: 7px 10px; border-bottom: 1px solid #eee; }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .empty-text {
+            font-size: 18px;
+        }
+        .result-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #1565c0;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-arrow" onclick="goBack()" title="رجوع">←</div>
+    
+    <div class="container">
+        <h2>📋 إدارة الأوردرات</h2>
+        
+        <div class="stats">
+            <div class="stat-card total">
+                <div class="stat-number" id="totalOrders">0</div>
+                <div class="stat-label">إجمالي الأوردرات</div>
+            </div>
+            <div class="stat-card today">
+                <div class="stat-number" id="todayOrders">0</div>
+                <div class="stat-label">أوردرات اليوم</div>
+            </div>
+            <div class="stat-card cash">
+                <div class="stat-number" id="totalCash">0</div>
+                <div class="stat-label">💰 إجمالي النقدية (جنيه)</div>
+            </div>
+        </div>
+        
+        <div class="search-section">
+            <div class="search-title">🔍 البحث عن الأوردرات</div>
+            
+            <div class="search-grid">
+                <div class="form-group">
+                    <label>من تاريخ</label>
+                    <input type="date" id="dateFrom">
+                </div>
+                
+                <div class="form-group">
+                    <label>إلى تاريخ</label>
+                    <input type="date" id="dateTo">
+                </div>
+                
+                <div class="form-group">
+                    <label>اسم الصيدلية</label>
+                    <input type="text" id="pharmacyFilter" placeholder="ابحث باسم الصيدلية">
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn btn-search" onclick="searchOrders()">🔍 بحث</button>
+                <button class="btn btn-reset" onclick="resetSearch()">🔄 إعادة تعيين</button>
+            </div>
+        </div>
+        
+        <div class="result-info" id="resultInfo"></div>
+        
+        <div class="table-container">
+            <table id="ordersTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>رقم الأوردر</th>
+                        <th>اسم الصيدلية</th>
+                        <th>التاريخ</th>
+                        <th>عدد المنتجات</th>
+                        <th>الإجمالي</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersBody"></tbody>
+            </table>
+            
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">لا توجد أوردرات حالياً</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deliveryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">🚚 اختر رجل الدليفري</div>
+            <div class="modal-body">
+                <div class="delivery-list" id="deliveryList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-send" onclick="sendToWhatsApp()">📱 إرسال عبر واتساب</button>
+                <button class="btn-modal btn-cancel" onclick="closeModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (!currentUser) window.location.replace('login.html');
+        
+        let db;
+        let allOrders = [];
+        let filteredOrders = [];
+        let selectedOrder = null;
+        let selectedDeliveryPhone = null;
+        let allDeliveryPersons = [];
+        
+        function initDB() {
+            const request = indexedDB.open('WarehouseDB', 5);
+            
+            request.onupgradeneeded = function(e) {
+                db = e.target.result;
+                
+                if (!db.objectStoreNames.contains('orders')) {
+                    const objectStore = db.createObjectStore('orders', { keyPath: 'id', autoIncrement: true });
+                    objectStore.createIndex('userId', 'userId', { unique: false });
+                    objectStore.createIndex('orderDate', 'orderDate', { unique: false });
+                    objectStore.createIndex('pharmacyName', 'pharmacyName', { unique: false });
+                }
+            };
+            
+            request.onsuccess = function() {
+                db = request.result;
+                loadOrders();
+            };
+            
+            request.onerror = function() {
+                loadOrdersFromLocalStorage();
+            };
+        }
+        
+        function loadOrders() {
+            if (!db) {
+                loadOrdersFromLocalStorage();
+                return;
+            }
+            
+            const transaction = db.transaction(['orders'], 'readonly');
+            const objectStore = transaction.objectStore('orders');
+            const index = objectStore.index('userId');
+            const request = index.getAll(currentUser.email);
+            
+            request.onsuccess = function() {
+                allOrders = request.result || [];
+                filteredOrders = [...allOrders];
+                displayOrders(filteredOrders);
+                updateStats(filteredOrders);
+            };
+            
+            request.onerror = function() {
+                loadOrdersFromLocalStorage();
+            };
+        }
+        
+        function loadOrdersFromLocalStorage() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            allOrders = orders.filter(o => o.userId === currentUser.email);
+            filteredOrders = [...allOrders];
+            displayOrders(filteredOrders);
+            updateStats(filteredOrders);
+        }
+        
+        function updateStats(orders) {
+            const total = orders.length;
+            const today = new Date().toISOString().split('T')[0];
+            const todayCount = orders.filter(o => o.orderDate === today).length;
+            const totalAmount = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+            const totalCash = orders
+                .filter(o => o.status === 'completed')
+                .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+            
+            document.getElementById('totalOrders').textContent = total;
+            document.getElementById('todayOrders').textContent = todayCount;
+            document.getElementById('totalCash').textContent = totalCash.toFixed(2);
+        }
+        
+        function displayOrders(orders) {
+            if (orders.length === 0) {
+                document.getElementById('ordersTable').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('ordersTable').style.display = 'table';
+            document.getElementById('emptyState').style.display = 'none';
+            
+            const tbody = document.getElementById('ordersBody');
+            tbody.innerHTML = '';
+            
+            orders.forEach((order, index) => {
+                const date = new Date(order.orderDate).toLocaleDateString('ar-EG');
+                
+                let statusBadge;
+                if (order.status === 'completed') {
+                    statusBadge = '<span class="badge badge-completed">مكتمل</span>';
+                } else if (order.status === 'cancelled') {
+                    statusBadge = '<span class="badge badge-cancelled">ملغي</span>';
+                } else {
+                    statusBadge = '<span class="badge badge-pending">قيد التنفيذ</span>';
+                }
+                
+                let actionButtons = '';
+                if (order.status === 'pending') {
+                    actionButtons = `
+                        <button class="btn-accept" onclick="acceptOrder(${index})">✅ قبول</button>
+                        <button class="btn-reject" onclick="rejectOrder(${index})">❌ رفض</button>
+                        <button class="btn-details" onclick="toggleDetails(${index})">📄 تفاصيل</button>
+                        <button class="btn-whatsapp" onclick="openDeliveryModal(${index})">📱 واتساب</button>
+                        <button class="btn-delete-order" onclick="deleteOrder(${index})">🗑️ حذف</button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <button class="btn-details" onclick="toggleDetails(${index})">📄 تفاصيل</button>
+                        <button class="btn-whatsapp" onclick="openDeliveryModal(${index})">📱 واتساب</button>
+                        <button class="btn-delete-order" onclick="deleteOrder(${index})">🗑️ حذف</button>
+                    `;
+                }
+
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>#${order.orderNumber || order.id}</strong></td>
+                        <td>${order.pharmacyName}</td>
+                        <td>${date}</td>
+                        <td>${order.itemsCount || 0}</td>
+                        <td><strong>${(order.totalAmount || 0).toFixed(2)} جنيه</strong></td>
+                        <td>${statusBadge}</td>
+                        <td>${actionButtons}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+
+                // صف تفاصيل المنتجات
+                let productsHtml = '';
+                if (order.products && order.products.length > 0) {
+                    productsHtml = '<table style="width:100%"><thead><tr>' +
+                        '<th>#</th><th>اسم المنتج</th><th>السعر</th><th>الخصم</th><th>بعد الخصم</th>' +
+                        '<th>كمية الأوردر</th><th>الكمية المتاحة</th><th>تاريخ الإنتاج</th><th>تاريخ الانتهاء</th>' +
+                        '</tr></thead><tbody>';
+                    order.products.forEach(function(p, pi) {
+                        var afterDisc = p.price - (p.price * p.discount / 100);
+                        var stock = p.isUnlimited ? 'متوفر دائماً' : (p.stockQuantity !== null && p.stockQuantity !== undefined ? p.stockQuantity : '-');
+                        productsHtml +=
+                            '<tr>' +
+                            '<td>' + (pi + 1) + '</td>' +
+                            '<td><strong>' + p.productName + '</strong></td>' +
+                            '<td>' + (p.price || 0).toFixed(2) + ' ج</td>' +
+                            '<td>' + (p.discount || 0) + '%</td>' +
+                            '<td>' + afterDisc.toFixed(2) + ' ج</td>' +
+                            '<td><strong>' + p.quantity + '</strong></td>' +
+                            '<td>' + stock + '</td>' +
+                            '<td>' + (p.productionDate || '-') + '</td>' +
+                            '<td>' + (p.expiryDate || '-') + '</td>' +
+                            '</tr>';
+                    });
+                    productsHtml += '</tbody></table>';
+                } else {
+                    productsHtml = '<p style="color:#999">لا توجد تفاصيل منتجات</p>';
+                }
+
+                tbody.innerHTML += `<tr class="order-details-row" id="details-row-${index}" style="display:none">
+                    <td colspan="8">
+                        <div class="order-details-box">
+                            <strong>📋 تفاصيل المنتجات:</strong>
+                            ${productsHtml}
+                        </div>
+                    </td>
+                </tr>`;
+            });
+        }
+        
+        function searchOrders() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const pharmacy = document.getElementById('pharmacyFilter').value.toLowerCase();
+            
+            filteredOrders = allOrders.filter(order => {
+                let match = true;
+                
+                if (dateFrom && order.orderDate < dateFrom) match = false;
+                if (dateTo && order.orderDate > dateTo) match = false;
+                
+                if (pharmacy) {
+                    if (!order.pharmacyName.toLowerCase().includes(pharmacy)) {
+                        match = false;
+                    } else {
+                        if (dateFrom && order.orderDate < dateFrom) match = false;
+                        if (dateTo && order.orderDate > dateTo) match = false;
+                    }
+                }
+                
+                return match;
+            });
+            
+            displayOrders(filteredOrders);
+            updateStats(filteredOrders);
+            
+            const resultInfo = document.getElementById('resultInfo');
+            resultInfo.style.display = 'block';
+            
+            let searchDetails = [];
+            if (dateFrom || dateTo) {
+                const fromText = dateFrom ? new Date(dateFrom).toLocaleDateString('ar-EG') : 'البداية';
+                const toText = dateTo ? new Date(dateTo).toLocaleDateString('ar-EG') : 'النهاية';
+                searchDetails.push(`من ${fromText} إلى ${toText}`);
+            }
+            if (pharmacy) searchDetails.push(`الصيدلية: ${pharmacy}`);
+            
+            const detailsText = searchDetails.length > 0 ? ` (${searchDetails.join(' - ')})` : '';
+            resultInfo.textContent = `تم العثور على ${filteredOrders.length} أوردر${detailsText}`;
+        }
+        
+        function resetSearch() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('pharmacyFilter').value = '';
+            document.getElementById('resultInfo').style.display = 'none';
+            
+            filteredOrders = [...allOrders];
+            displayOrders(filteredOrders);
+            updateStats(filteredOrders);
+        }
+        
+        function openDeliveryModal(orderIndex) {
+            selectedOrder = filteredOrders[orderIndex];
+            if (!selectedOrder) {
+                alert('لم يتم العثور على الأوردر');
+                return;
+            }
+            
+            loadDeliveryPersons();
+        }
+        
+        function loadDeliveryPersons() {
+            const request = indexedDB.open('WarehouseDB', 5);
+            
+            request.onupgradeneeded = function(e) {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('delivery')) {
+                    const store = db.createObjectStore('delivery', { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('userId', 'userId', { unique: false });
+                    store.createIndex('phone', 'phone', { unique: false });
+                }
+            };
+            
+            request.onsuccess = function() {
+                const db = request.result;
+                
+                if (!db.objectStoreNames.contains('delivery')) {
+                    loadDeliveryFromLocalStorage();
+                    return;
+                }
+                
+                const transaction = db.transaction(['delivery'], 'readonly');
+                const objectStore = transaction.objectStore('delivery');
+                const index = objectStore.index('userId');
+                const getRequest = index.getAll(currentUser.email);
+                
+                getRequest.onsuccess = function() {
+                    allDeliveryPersons = getRequest.result || [];
+                    console.log('تم تحميل رجال الدليفري من IndexedDB:', allDeliveryPersons);
+                    if (allDeliveryPersons.length === 0) {
+                        loadDeliveryFromLocalStorage();
+                    } else {
+                        displayDeliveryList();
+                    }
+                };
+                
+                getRequest.onerror = function() {
+                    console.log('خطأ في تحميل من IndexedDB، جاري التحميل من localStorage');
+                    loadDeliveryFromLocalStorage();
+                };
+            };
+            
+            request.onerror = function() {
+                console.log('خطأ في فتح IndexedDB، جاري التحميل من localStorage');
+                loadDeliveryFromLocalStorage();
+            };
+        }
+        
+        function loadDeliveryFromLocalStorage() {
+            const delivery = JSON.parse(localStorage.getItem('delivery')) || [];
+            console.log('جميع رجال الدليفري في localStorage:', delivery);
+            allDeliveryPersons = delivery.filter(d => {
+                console.log('فحص:', d.userId, '==', currentUser.email, '?', d.userId === currentUser.email);
+                return d.userId === currentUser.email;
+            });
+            console.log('رجال الدليفري المفلترين:', allDeliveryPersons);
+            displayDeliveryList();
+        }
+        
+        function displayDeliveryList() {
+            if (allDeliveryPersons.length === 0) {
+                alert('لا يوجد رجال دليفري مسجلين. يرجى إضافة رجل دليفري أولاً.');
+                return;
+            }
+            
+            const deliveryList = document.getElementById('deliveryList');
+            deliveryList.innerHTML = '';
+            
+            allDeliveryPersons.forEach(person => {
+                const div = document.createElement('div');
+                div.className = 'delivery-item';
+                div.onclick = () => selectDelivery(person.phone, div);
+                div.innerHTML = `
+                    <div class="delivery-name">🚛 ${person.name}</div>
+                    <div class="delivery-phone">📞 ${person.phone}</div>
+                `;
+                deliveryList.appendChild(div);
+            });
+            
+            document.getElementById('deliveryModal').style.display = 'block';
+        }
+        
+        function selectDelivery(phone, element) {
+            document.querySelectorAll('.delivery-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            selectedDeliveryPhone = phone;
+        }
+        
+        function closeModal() {
+            document.getElementById('deliveryModal').style.display = 'none';
+            selectedOrder = null;
+            selectedDeliveryPhone = null;
+        }
+        
+        function sendToWhatsApp() {
+            if (!selectedDeliveryPhone) {
+                alert('يرجى اختيار رجل دليفري');
+                return;
+            }
+            
+            if (!selectedOrder) {
+                alert('حدث خطأ في تحديد الأوردر');
+                return;
+            }
+            
+            let message = `📋 *أوردر جديد*%0A%0A`;
+            message += `رقم الأوردر: *#${selectedOrder.orderNumber || selectedOrder.id}*%0A`;
+            message += `التاريخ: ${new Date(selectedOrder.orderDate || selectedOrder.createdAt).toLocaleDateString('ar-EG')}%0A%0A`;
+            
+            message += `🏥 *بيانات الصيدلية:*%0A`;
+            message += `الاسم: ${selectedOrder.pharmacyName}%0A`;
+            
+            if (selectedOrder.pharmacyPhone) {
+                message += `📞 التليفون: ${selectedOrder.pharmacyPhone}%0A`;
+            }
+            
+            if (selectedOrder.pharmacyAddress) {
+                message += `📍 العنوان: ${selectedOrder.pharmacyAddress}%0A`;
+            }
+            
+            if (selectedOrder.pharmacyGPS && selectedOrder.pharmacyGPS.lat && selectedOrder.pharmacyGPS.lng) {
+                message += `🗺️ الموقع: https://www.google.com/maps?q=${selectedOrder.pharmacyGPS.lat},${selectedOrder.pharmacyGPS.lng}%0A`;
+            }
+            
+            message += `%0A📄 *تفاصيل الأوردر:*%0A`;
+            message += `عدد المنتجات: ${selectedOrder.itemsCount || 0}%0A`;
+            message += `الإجمالي: *${(selectedOrder.totalAmount || 0).toFixed(2)} جنيه*%0A`;
+            
+            if (selectedOrder.products && selectedOrder.products.length > 0) {
+                message += `%0A📦 *المنتجات:*%0A`;
+                selectedOrder.products.forEach((product, index) => {
+                    message += `${index + 1}. ${product.productName} - الكمية: ${product.quantity}%0A`;
+                });
+            }
+            
+            const whatsappUrl = `https://wa.me/${selectedDeliveryPhone}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+            closeModal();
+        }
+        
+        function toggleDetails(index) {
+            const row = document.getElementById('details-row-' + index);
+            if (!row) return;
+            const isVisible = row.style.display !== 'none';
+            document.querySelectorAll('.order-details-row').forEach(r => r.style.display = 'none');
+            if (!isVisible) row.style.display = 'table-row';
+        }
+
+        function goBack() {
+            if (currentUser.userType === 'admin') {
+                window.location.replace('admin-dashboard.html');
+            } else if (currentUser.userType === 'employee') {
+                window.location.replace('telesales.html');
+            } else {
+                window.location.replace('menu.html');
+            }
+        }
+
+        function acceptOrder(orderIndex) {
+            const order = filteredOrders[orderIndex];
+            if (!order) return;
+            if (!confirm(`هل أنت متأكد من قبول الأوردر #${order.orderNumber || order.id}؟\nسيتم خصم الكميات المدخلة من المخزن.`)) return;
+            if (order.products && order.products.length > 0) {
+                deductProductQuantities(order.products, function() {
+                    updateOrderStatus(order, 'completed');
+                });
+            } else {
+                updateOrderStatus(order, 'completed');
+            }
+        }
+        
+        function rejectOrder(orderIndex) {
+            const order = filteredOrders[orderIndex];
+            if (!order) return;
+            
+            if (!confirm(`هل أنت متأكد من رفض الأوردر #${order.orderNumber || order.id}؟`)) return;
+            
+            updateOrderStatus(order, 'cancelled', orderIndex);
+        }
+        
+        function deductProductQuantities(orderProducts, callback) {
+            // خصم من localStorage أولاً دائماً
+            deductFromLocalStorage(orderProducts);
+
+            if (!db) {
+                if (callback) callback();
+                return;
+            }
+            const transaction = db.transaction(['products'], 'readwrite');
+            const objectStore = transaction.objectStore('products');
+            const request = objectStore.index('userId').getAll(currentUser.email);
+            request.onsuccess = function() {
+                const allProducts = request.result || [];
+                orderProducts.forEach(function(orderProduct) {
+                    const product = allProducts.find(function(p) {
+                        return p.productName.toLowerCase() === orderProduct.productName.toLowerCase();
+                    });
+                    if (!product) return;
+                    // لا تخصم إذا كانت الكمية null أو isUnlimited
+                    if (product.isUnlimited || product.quantity === null || product.quantity === undefined) return;
+                    product.quantity = Math.max(0, product.quantity - orderProduct.quantity);
+                    objectStore.put(product);
+                });
+                transaction.oncomplete = function() { if (callback) callback(); };
+            };
+            request.onerror = function() { if (callback) callback(); };
+        }
+
+        function deductFromLocalStorage(orderProducts) {
+            const products = JSON.parse(localStorage.getItem('products')) || [];
+            orderProducts.forEach(function(orderProduct) {
+                const product = products.find(function(p) {
+                    return p.userId === currentUser.email &&
+                        p.productName.toLowerCase() === orderProduct.productName.toLowerCase();
+                });
+                if (!product) return;
+                // لا تخصم إذا كانت الكمية null أو isUnlimited
+                if (product.isUnlimited || product.quantity === null || product.quantity === undefined) return;
+                product.quantity = Math.max(0, product.quantity - orderProduct.quantity);
+            });
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+        
+        function updateOrderStatus(order, newStatus) {
+            // تحديث في localStorage أولاً دائماً
+            const lsOrders = JSON.parse(localStorage.getItem('orders')) || [];
+            const lsOrder = lsOrders.find(function(o) {
+                return o.userId === currentUser.email &&
+                    (String(o.orderNumber) === String(order.orderNumber) || String(o.id) === String(order.id));
+            });
+            if (lsOrder) {
+                lsOrder.status = newStatus;
+                lsOrder.updatedAt = new Date().toISOString();
+                localStorage.setItem('orders', JSON.stringify(lsOrders));
+            }
+
+            if (!db) {
+                alert(newStatus === 'completed' ? 'تم قبول الأوردر وخصم الكميات بنجاح' : 'تم رفض الأوردر');
+                loadOrdersFromLocalStorage();
+                return;
+            }
+            order.status = newStatus;
+            order.updatedAt = new Date().toISOString();
+            const tx = db.transaction(['orders'], 'readwrite');
+            tx.objectStore('orders').put(order);
+            tx.oncomplete = function() {
+                alert(newStatus === 'completed' ? 'تم قبول الأوردر وخصم الكميات بنجاح' : 'تم رفض الأوردر');
+                loadOrders();
+            };
+            tx.onerror = function() {
+                alert(newStatus === 'completed' ? 'تم قبول الأوردر وخصم الكميات بنجاح' : 'تم رفض الأوردر');
+                loadOrdersFromLocalStorage();
+            };
+        }
+        
+        function deleteOrder(orderIndex) {
+            const order = filteredOrders[orderIndex];
+            if (!order) return;
+            if (!confirm(`هل أنت متأكد من حذف الأوردر #${order.orderNumber || order.id}؟`)) return;
+
+            // حذف من localStorage
+            const lsOrders = JSON.parse(localStorage.getItem('orders')) || [];
+            const updated = lsOrders.filter(o =>
+                !(o.userId === currentUser.email &&
+                  (String(o.orderNumber) === String(order.orderNumber) || String(o.id) === String(order.id)))
+            );
+            localStorage.setItem('orders', JSON.stringify(updated));
+
+            // حذف من IndexedDB
+            if (db && order.id) {
+                const tx = db.transaction(['orders'], 'readwrite');
+                tx.objectStore('orders').delete(order.id);
+                tx.oncomplete = function() { loadOrders(); };
+                tx.onerror = function() { loadOrders(); };
+            } else {
+                loadOrders();
+            }
+        }
+
+        function goBack() {
+            if (currentUser.userType === 'admin') {
+                window.location.replace('admin-dashboard.html');
+            } else if (currentUser.userType === 'employee') {
+                window.location.replace('telesales.html');
+            } else {
+                window.location.replace('menu.html');
+            }
+        }
+        
+        initDB();
+    </script>
+    <script src="ai-core.js"></script>
+    <script src="ai-validation.js"></script>
+    <script src="ai-speech.js"></script>
+    <script src="ai-database.js"></script>
+    <script src="ai-ui.js"></script>
+    <script src="ai-assistant.js"></script>
+</body>
+</html>

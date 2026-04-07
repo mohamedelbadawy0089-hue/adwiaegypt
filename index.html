@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلامتك - الصيدلية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .search-bar {
+            display: flex;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .search-bar input[type="text"] {
+            padding: 0.5rem;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .product-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .product-card img {
+            max-width: 100%;
+            height: auto;
+        }
+        .product-card h3 {
+            font-size: 1rem;
+            margin: 0.5rem 0;
+        }
+        .product-card p {
+            color: #555;
+        }
+        .cart-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        footer {
+            background-color: #f1f1f1;
+            padding: 1rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+    </style>
+    <script src="navigation.js"></script>
+</head>
+<body>
+    <header>
+        <h1>الصيدلية</h1>
+    </header>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="ابحث عن دواء...">
+    </div>
+
+    <div class="container">
+        <div class="product-grid" id="productGrid">
+            <!-- سيتم تعبئة المنتجات هنا ديناميكيًا -->
+        </div>
+    </div>
+
+    <div class="container" style="margin-top: 2rem;">
+        <h2>السلة</h2>
+        <ul id="cartList"></ul>
+        <button class="cart-button" onclick="submitOrder()">تقديم الطلب</button>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 سلامتك. جميع الحقوق محفوظة.</p>
+    </footer>
+
+    <script>
+        // بيانات المنتجات (سيتم استبدالها ببيانات حقيقية من الخادم في المستقبل)
+        const products = [
+            { id: 1, name: "كروين 10 ملغ", price: 25.50, category: "أدوية" },
+            { id: 2, name: "كروين 20 ملغ", price: 35.75, category: "أدوية" },
+            { id: 3, name: "كروين 30 ملغ", price: 45.00, category: "أدوية" },
+            { id: 4, name: "باراسيتامول 500 ملغ", price: 15.25, category: "أدوية" },
+            { id: 5, name: "فيتامين سي", price: 30.00, category: "مكملات غذائية" },
+            { id: 6, name: "فيتامين د", price: 35.00, category: "مكملات غذائية" },
+            { id: 7, name: "أوميغا 3", price: 50.00, category: "مكملات غذائية" },
+            { id: 8, name: "زجاجة ماء", price: 5.00, category: "أخرى" }
+        ];
+
+        // تعبئة المنتجات في الشبكة
+        function displayProducts(products) {
+            const productGrid = document.getElementById("productGrid");
+            productGrid.innerHTML = "";
+            
+            products.forEach(product => {
+                const productCard = document.createElement("div");
+                productCard.className = "product-card";
+                productCard.innerHTML = `
+                    <img src="https://via.placeholder.com/150" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p>${product.price} ر.س</p>
+                    <p>${product.category}</p>
+                    <button class="cart-button" onclick="addToCart(${product.id})">إضافة إلى السلة</button>
+                `;
+                productGrid.appendChild(productCard);
+            });
+        }
+
+        // البحث عن المنتجات
+        document.getElementById("searchInput").addEventListener("input", function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(searchTerm)
+            );
+            displayProducts(filteredProducts);
+        });
+
+        // إضافة المنتج إلى السلة
+        const cart = [];
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            cart.push(product);
+            updateCartDisplay();
+        }
+
+        // تحديث عرض السلة
+        function updateCartDisplay() {
+            const cartList = document.getElementById("cartList");
+            cartList.innerHTML = "";
+            
+            let totalPrice = 0;
+            cart.forEach((product, index) => {
+                totalPrice += product.price;
+                const li = document.createElement("li");
+                li.textContent = `${product.name} - ${product.price} ر.س`;
+                cartList.appendChild(li);
+            });
+            
+            const totalLi = document.createElement("li");
+            totalLi.textContent = `المجموع: ${totalPrice.toFixed(2)} ر.س`;
+            totalLi.style.fontWeight = "bold";
+            cartList.appendChild(totalLi);
+        }
+
+        // تقديم الطلب
+        function submitOrder() {
+            if (cart.length === 0) {
+                alert("السلة فارغة. الرجاء إضافة منتجات قبل تقديم الطلب.");
+                return;
+            }
+            
+            // في المستقبل، سيتم إرسال البيانات إلى الخادم
+            alert("تم تقديم الطلب بنجاح!");
+            cart.length = 0;
+            updateCartDisplay();
+        }
+
+        // عرض جميع المنتجات في البداية
+        displayProducts(products);
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=A.html">
+    <title>سلامتك - تحويل...</title>
+</head>
+<body>
+    <p>جاري التحويل...</p>
+    <script>
+        window.location.href = 'A.html';
+    </script>
+</body>
+</html>

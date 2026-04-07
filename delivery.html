@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الدليفري</title>
+    <script src="navigation.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .back-arrow {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg, #ff6b6b, #dc3545);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.5);
+            transition: all 0.3s;
+            border: 3px solid white;
+            z-index: 1000;
+            outline: none;
+            user-select: none;
+        }
+        .back-arrow:hover {
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.7);
+        }
+        .back-arrow:active {
+            transform: scale(0.95);
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+        }
+        .add-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px solid #667eea;
+        }
+        .add-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        .required {
+            color: #dc3545;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        input.error {
+            border-color: #dc3545;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-add {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-add:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            padding: 12px;
+            text-align: right;
+            font-weight: bold;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: right;
+        }
+        tr:hover {
+            background: #fff9f0;
+        }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+        .btn-delete:hover {
+            background: #c82333;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .empty-text {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-arrow" onclick="goBack()" title="رجوع">←</div>
+    
+    <div class="container">
+        <h2>🚚 إدارة رجال الدليفري وموظف التحضير</h2>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="deliveryCount">0</div>
+                <div class="stat-label">إجمالي رجال الدليفري</div>
+            </div>
+        </div>
+        
+        <div class="add-section" style="background: #e8f5e9; border-color: #25d366;">
+            <div class="add-title" style="color: #25d366;">📱 رقم موظف التحضير</div>
+            <div id="preparationDisplay" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 8px; margin-bottom: 15px;">
+                    <div>
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">رقم الواتساب:</div>
+                        <div style="font-size: 18px; font-weight: bold; color: #25d366;" id="preparationPhoneText"></div>
+                    </div>
+                    <div>
+                        <button class="btn" style="background: #667eea; color: white; margin-left: 10px;" onclick="editPreparationPhone()">✏️ تعديل</button>
+                        <button class="btn" style="background: #dc3545; color: white;" onclick="deletePreparationPhone()">🗑️ حذف</button>
+                    </div>
+                </div>
+            </div>
+            <div id="preparationForm" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>رقم واتساب موظف التحضير <span class="required">*</span></label>
+                        <input type="tel" id="preparationPhone" placeholder="01234567890 (بدون كود الدولة)" maxlength="11" oninput="validatePreparationPhone()">
+                        <div class="error-message" id="prepPhoneError">يجب إدخال 11 رقم</div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-add" id="savePreparationBtn" onclick="savePreparationPhone()" disabled>حفظ رقم موظف التحضير</button>
+            </div>
+        </div>
+        
+        <div class="add-section">
+            <div class="add-title">➕ إضافة رجل دليفري جديد</div>
+            <form onsubmit="handleSubmit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الاسم <span class="required">*</span></label>
+                        <input type="text" id="deliveryName" oninput="checkFormValidity()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>رقم التليفون <span class="required">*</span></label>
+                        <input type="tel" id="deliveryPhone" placeholder="11 رقم" maxlength="11" oninput="validatePhone()" required>
+                        <div class="error-message" id="phoneError">يجب إدخال 11 رقم</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-add" id="submitBtn" disabled>إضافة رجل الدليفري</button>
+            </form>
+        </div>
+        
+        <div class="table-container">
+            <table id="deliveryTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم</th>
+                        <th>رقم التليفون</th>
+                        <th>تاريخ الإضافة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="deliveryBody"></tbody>
+            </table>
+            
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">🚚</div>
+                <div class="empty-text">لا يوجد رجال دليفري مسجلين حالياً</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (!currentUser) window.location.replace('login.html');
+        
+        let db;
+        let allDelivery = [];
+        
+        // عرض رقم موظف التحضير
+        function displayPreparationPhone() {
+            if (currentUser.preparationPhone) {
+                document.getElementById('preparationDisplay').style.display = 'block';
+                document.getElementById('preparationForm').style.display = 'none';
+                document.getElementById('preparationPhoneText').textContent = currentUser.preparationPhone;
+            } else {
+                document.getElementById('preparationDisplay').style.display = 'none';
+                document.getElementById('preparationForm').style.display = 'block';
+            }
+        }
+        
+        function validatePreparationPhone() {
+            const phone = document.getElementById('preparationPhone').value;
+            const phoneError = document.getElementById('prepPhoneError');
+            const phoneInput = document.getElementById('preparationPhone');
+            const saveBtn = document.getElementById('savePreparationBtn');
+            
+            if (phone && phone.length !== 11) {
+                phoneError.style.display = 'block';
+                phoneInput.classList.add('error');
+                saveBtn.disabled = true;
+            } else if (phone.length === 11) {
+                phoneError.style.display = 'none';
+                phoneInput.classList.remove('error');
+                saveBtn.disabled = false;
+            } else {
+                saveBtn.disabled = true;
+            }
+        }
+        
+        function savePreparationPhone() {
+            const phone = document.getElementById('preparationPhone').value.trim();
+            
+            if (phone.length !== 11) {
+                alert('يرجى إدخال رقم صحيح (11 رقم)');
+                return;
+            }
+            
+            currentUser.preparationPhone = phone;
+            
+            // حفظ في localStorage
+            const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+            const userIndex = users.findIndex(u => u.email === currentUser.email);
+            if (userIndex !== -1) {
+                users[userIndex].preparationPhone = phone;
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+            }
+            
+            // حفظ في IndexedDB
+            const request = indexedDB.open('WarehouseDB', 1);
+            request.onsuccess = function() {
+                const db = request.result;
+                if (db.objectStoreNames.contains('users')) {
+                    const tx = db.transaction(['users'], 'readwrite');
+                    const store = tx.objectStore('users');
+                    const getReq = store.getAll();
+                    getReq.onsuccess = function() {
+                        const allUsers = getReq.result;
+                        const user = allUsers.find(u => u.email === currentUser.email);
+                        if (user) {
+                            user.preparationPhone = phone;
+                            store.put(user);
+                        }
+                    };
+                }
+            };
+            
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            alert('✅ تم حفظ رقم موظف التحضير بنجاح!');
+            document.getElementById('preparationPhone').value = '';
+            displayPreparationPhone();
+        }
+        
+        function editPreparationPhone() {
+            document.getElementById('preparationPhone').value = currentUser.preparationPhone || '';
+            document.getElementById('preparationDisplay').style.display = 'none';
+            document.getElementById('preparationForm').style.display = 'block';
+            validatePreparationPhone();
+        }
+        
+        function deletePreparationPhone() {
+            if (!confirm('هل أنت متأكد من حذف رقم موظف التحضير؟')) return;
+            
+            currentUser.preparationPhone = null;
+            
+            // حذف من localStorage
+            const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+            const userIndex = users.findIndex(u => u.email === currentUser.email);
+            if (userIndex !== -1) {
+                delete users[userIndex].preparationPhone;
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+            }
+            
+            // حذف من IndexedDB
+            const request = indexedDB.open('WarehouseDB', 1);
+            request.onsuccess = function() {
+                const db = request.result;
+                if (db.objectStoreNames.contains('users')) {
+                    const tx = db.transaction(['users'], 'readwrite');
+                    const store = tx.objectStore('users');
+                    const getReq = store.getAll();
+                    getReq.onsuccess = function() {
+                        const allUsers = getReq.result;
+                        const user = allUsers.find(u => u.email === currentUser.email);
+                        if (user) {
+                            delete user.preparationPhone;
+                            store.put(user);
+                        }
+                    };
+                }
+            };
+            
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            alert('تم حذف رقم موظف التحضير بنجاح!');
+            displayPreparationPhone();
+        }
+        
+        function initDB() {
+            const request = indexedDB.open('WarehouseDB', 5);
+            
+            request.onupgradeneeded = function(e) {
+                db = e.target.result;
+                
+                if (!db.objectStoreNames.contains('delivery')) {
+                    const objectStore = db.createObjectStore('delivery', { keyPath: 'id', autoIncrement: true });
+                    objectStore.createIndex('userId', 'userId', { unique: false });
+                    objectStore.createIndex('phone', 'phone', { unique: false });
+                }
+            };
+            
+            request.onsuccess = function() {
+                db = request.result;
+                loadDelivery();
+            };
+            
+            request.onerror = function() {
+                loadDeliveryFromLocalStorage();
+            };
+        }
+        
+        function validatePhone() {
+            const phone = document.getElementById('deliveryPhone').value;
+            const phoneError = document.getElementById('phoneError');
+            const phoneInput = document.getElementById('deliveryPhone');
+            
+            if (phone && phone.length !== 11) {
+                phoneError.style.display = 'block';
+                phoneInput.classList.add('error');
+            } else {
+                phoneError.style.display = 'none';
+                phoneInput.classList.remove('error');
+            }
+            
+            checkFormValidity();
+        }
+        
+        function checkFormValidity() {
+            const name = document.getElementById('deliveryName').value.trim();
+            const phone = document.getElementById('deliveryPhone').value;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (name && phone.length === 11) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+        
+        function handleSubmit(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('deliveryName').value.trim();
+            const phone = document.getElementById('deliveryPhone').value;
+            
+            if (!name || phone.length !== 11) {
+                alert('يرجى إدخال جميع البيانات بشكل صحيح');
+                return;
+            }
+            
+            const deliveryData = {
+                userId: currentUser.email,
+                warehouseName: currentUser.warehouseName,
+                name: name,
+                phone: phone,
+                createdAt: new Date().toISOString()
+            };
+            
+            if (!db) {
+                const delivery = JSON.parse(localStorage.getItem('delivery')) || [];
+                delivery.push(deliveryData);
+                localStorage.setItem('delivery', JSON.stringify(delivery));
+                alert('تم إضافة رجل الدليفري بنجاح');
+                resetForm();
+                loadDeliveryFromLocalStorage();
+                return;
+            }
+            
+            const transaction = db.transaction(['delivery'], 'readwrite');
+            const objectStore = transaction.objectStore('delivery');
+            const request = objectStore.add(deliveryData);
+            
+            request.onsuccess = function() {
+                alert('تم إضافة رجل الدليفري بنجاح');
+                resetForm();
+                loadDelivery();
+            };
+            
+            request.onerror = function() {
+                alert('حدث خطأ أثناء الإضافة');
+            };
+        }
+        
+        function resetForm() {
+            document.getElementById('deliveryName').value = '';
+            document.getElementById('deliveryPhone').value = '';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('phoneError').style.display = 'none';
+            document.getElementById('deliveryPhone').classList.remove('error');
+        }
+        
+        function loadDelivery() {
+            if (!db) {
+                loadDeliveryFromLocalStorage();
+                return;
+            }
+            
+            const transaction = db.transaction(['delivery'], 'readonly');
+            const objectStore = transaction.objectStore('delivery');
+            const index = objectStore.index('userId');
+            const request = index.getAll(currentUser.email);
+            
+            request.onsuccess = function() {
+                allDelivery = request.result || [];
+                displayDelivery(allDelivery);
+            };
+            
+            request.onerror = function() {
+                loadDeliveryFromLocalStorage();
+            };
+        }
+        
+        function loadDeliveryFromLocalStorage() {
+            const delivery = JSON.parse(localStorage.getItem('delivery')) || [];
+            allDelivery = delivery.filter(d => d.userId === currentUser.email);
+            displayDelivery(allDelivery);
+        }
+        
+        function displayDelivery(delivery) {
+            document.getElementById('deliveryCount').textContent = delivery.length;
+            
+            if (delivery.length === 0) {
+                document.getElementById('deliveryTable').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('deliveryTable').style.display = 'table';
+            document.getElementById('emptyState').style.display = 'none';
+            
+            const tbody = document.getElementById('deliveryBody');
+            tbody.innerHTML = '';
+            
+            delivery.forEach((person, index) => {
+                const date = new Date(person.createdAt).toLocaleDateString('ar-EG');
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${person.name}</strong></td>
+                        <td>${person.phone}</td>
+                        <td>${date}</td>
+                        <td><button class="btn-delete" onclick="deleteDelivery(${person.id || index})">حذف</button></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        function deleteDelivery(id) {
+            if (!confirm('هل أنت متأكد من حذف رجل الدليفري؟')) return;
+            
+            if (!db) {
+                const delivery = JSON.parse(localStorage.getItem('delivery')) || [];
+                delivery.splice(id, 1);
+                localStorage.setItem('delivery', JSON.stringify(delivery));
+                loadDeliveryFromLocalStorage();
+                return;
+            }
+            
+            const transaction = db.transaction(['delivery'], 'readwrite');
+            const objectStore = transaction.objectStore('delivery');
+            const request = objectStore.delete(id);
+            
+            request.onsuccess = function() {
+                loadDelivery();
+            };
+        }
+        
+        function goBack() {
+            if (currentUser.userType === 'admin') {
+                window.location.replace('admin-dashboard.html');
+            } else {
+                window.location.replace('menu.html');
+            }
+        }
+        
+        initDB();
+        displayPreparationPhone();
+    </script>
+    <script src="ai-core.js"></script>
+    <script src="ai-validation.js"></script>
+    <script src="ai-speech.js"></script>
+    <script src="ai-database.js"></script>
+    <script src="ai-ui.js"></script>
+    <script src="ai-assistant.js"></script>
+</body>
+</html>

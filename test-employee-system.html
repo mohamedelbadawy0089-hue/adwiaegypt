@@ -1,0 +1,378 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار نظام الموظفين</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        .test-section {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .test-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .test-steps {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-steps li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .credential-box {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 2px solid #4caf50;
+        }
+        .credential-box strong {
+            color: #2e7d32;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        .success-box {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: right;
+            border: 1px solid #ddd;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .feature-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        .feature-item:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        .feature-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .feature-desc {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 دليل اختبار نظام الموظفين الجديد</h1>
+        
+        <div class="success-box">
+            ✅ تم تطوير النظام بنجاح! الآن يمكن لكل مخزن إضافة موظفين متعددين بنفس الإيميل
+        </div>
+
+        <h2>📋 خطوات الاختبار</h2>
+
+        <div class="test-section">
+            <div class="test-title">1️⃣ تسجيل مخزن جديد</div>
+            <ol class="test-steps">
+                <li>افتح صفحة <strong>register.html</strong></li>
+                <li>أدخل بيانات المخزن (اسم المخزن، التليفون، المحافظة، الإيميل، الباسورد)</li>
+                <li>اضغط "تسجيل"</li>
+            </ol>
+            <div class="credential-box">
+                <strong>مثال:</strong><br>
+                الإيميل: test@warehouse.com<br>
+                الباسورد الرئيسي: admin123
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">2️⃣ تسجيل دخول المدير</div>
+            <ol class="test-steps">
+                <li>افتح صفحة <strong>login.html</strong></li>
+                <li>أدخل الإيميل: test@warehouse.com</li>
+                <li>أدخل الباسورد: admin123</li>
+                <li>اضغط "دخول"</li>
+                <li>سيتم توجيهك إلى <strong>admin-dashboard.html</strong></li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">3️⃣ إضافة موظفين</div>
+            <ol class="test-steps">
+                <li>في صفحة admin-dashboard.html، انتقل لقسم "إدارة الموظفين"</li>
+                <li>أضف موظف أول:
+                    <div class="credential-box">
+                        الاسم: أحمد محمد<br>
+                        الباسورد: ahmed2024
+                    </div>
+                </li>
+                <li>أضف موظف ثاني:
+                    <div class="credential-box">
+                        الاسم: محمد علي<br>
+                        الباسورد: mohamed2024
+                    </div>
+                </li>
+                <li>أضف موظف ثالث:
+                    <div class="credential-box">
+                        الاسم: سارة أحمد<br>
+                        الباسورد: sara2024
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">4️⃣ تسجيل دخول الموظف</div>
+            <ol class="test-steps">
+                <li>سجل خروج من حساب المدير</li>
+                <li>افتح صفحة <strong>login.html</strong></li>
+                <li>أدخل الإيميل: test@warehouse.com (نفس إيميل المخزن)</li>
+                <li>أدخل باسورد الموظف: ahmed2024</li>
+                <li>اضغط "دخول"</li>
+                <li>سيتم توجيهك إلى <strong>telesales.html</strong></li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">5️⃣ اختبار صلاحيات الموظف</div>
+            <ol class="test-steps">
+                <li>في صفحة telesales.html، ستجد زرين فقط:
+                    <ul>
+                        <li>🏥 الصيدليات</li>
+                        <li>📦 الأوردرات</li>
+                    </ul>
+                </li>
+                <li>جرب إضافة صيدلية جديدة</li>
+                <li>جرب إنشاء أوردر</li>
+                <li>لاحظ أن الموظف لا يمكنه الوصول لإدارة المنتجات أو رجال الدليفري</li>
+            </ol>
+        </div>
+
+        <h2>📊 جدول المقارنة</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>الميزة</th>
+                    <th>المدير (Admin)</th>
+                    <th>الموظف (Employee)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>إدارة المنتجات</td>
+                    <td>✅ نعم</td>
+                    <td>❌ لا</td>
+                </tr>
+                <tr>
+                    <td>إدارة الصيدليات</td>
+                    <td>✅ نعم</td>
+                    <td>✅ نعم</td>
+                </tr>
+                <tr>
+                    <td>إدارة الأوردرات</td>
+                    <td>✅ نعم</td>
+                    <td>✅ نعم</td>
+                </tr>
+                <tr>
+                    <td>إدارة رجال الدليفري</td>
+                    <td>✅ نعم</td>
+                    <td>❌ لا</td>
+                </tr>
+                <tr>
+                    <td>إدارة الموظفين</td>
+                    <td>✅ نعم</td>
+                    <td>❌ لا</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🎨 الميزات الجديدة</h2>
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon">👥</div>
+                <div class="feature-title">تعدد الموظفين</div>
+                <div class="feature-desc">إضافة عدد غير محدود من الموظفين لكل مخزن</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🔐</div>
+                <div class="feature-title">باسورد فريد</div>
+                <div class="feature-desc">كل موظف له باسورد خاص به</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📧</div>
+                <div class="feature-title">إيميل موحد</div>
+                <div class="feature-desc">جميع الموظفين يستخدمون نفس إيميل المخزن</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🛡️</div>
+                <div class="feature-title">صلاحيات محدودة</div>
+                <div class="feature-desc">الموظفون لديهم صلاحيات محدودة فقط</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">سهولة الإدارة</div>
+                <div class="feature-desc">إضافة وحذف الموظفين بسهولة</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-title">تحديث فوري</div>
+                <div class="feature-desc">التغييرات تظهر فوراً في النظام</div>
+            </div>
+        </div>
+
+        <h2>⚠️ ملاحظات مهمة</h2>
+        <div class="warning-box">
+            <strong>تنبيه:</strong>
+            <ul>
+                <li>الباسورد الرئيسي للمخزن يجب أن يبقى سرياً</li>
+                <li>لا يمكن تكرار الباسوردات بين الموظفين</li>
+                <li>عند حذف موظف، لن يتمكن من تسجيل الدخول مرة أخرى</li>
+                <li>جميع البيانات محفوظة في localStorage و IndexedDB</li>
+            </ul>
+        </div>
+
+        <h2>🚀 روابط سريعة</h2>
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="register.html" class="btn">تسجيل مخزن جديد</a>
+            <a href="login.html" class="btn btn-secondary">تسجيل الدخول</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📝 سيناريو اختبار كامل</h2>
+        
+        <div class="test-section">
+            <div class="test-title">السيناريو الكامل</div>
+            <ol class="test-steps">
+                <li><strong>المدير يسجل دخول:</strong>
+                    <ul>
+                        <li>الإيميل: test@warehouse.com</li>
+                        <li>الباسورد: admin123</li>
+                        <li>النتيجة: يدخل لصفحة admin-dashboard.html</li>
+                    </ul>
+                </li>
+                <li><strong>المدير يضيف 3 موظفين:</strong>
+                    <ul>
+                        <li>أحمد - ahmed2024</li>
+                        <li>محمد - mohamed2024</li>
+                        <li>سارة - sara2024</li>
+                    </ul>
+                </li>
+                <li><strong>أحمد يسجل دخول:</strong>
+                    <ul>
+                        <li>الإيميل: test@warehouse.com</li>
+                        <li>الباسورد: ahmed2024</li>
+                        <li>النتيجة: يدخل لصفحة telesales.html</li>
+                    </ul>
+                </li>
+                <li><strong>أحمد يضيف صيدلية:</strong>
+                    <ul>
+                        <li>يذهب للصيدليات</li>
+                        <li>يضيف صيدلية جديدة</li>
+                        <li>ينشئ أوردر للصيدلية</li>
+                    </ul>
+                </li>
+                <li><strong>محمد يسجل دخول:</strong>
+                    <ul>
+                        <li>الإيميل: test@warehouse.com</li>
+                        <li>الباسورد: mohamed2024</li>
+                        <li>النتيجة: يدخل لصفحة telesales.html</li>
+                    </ul>
+                </li>
+                <li><strong>محمد يشاهد الأوردرات:</strong>
+                    <ul>
+                        <li>يذهب للأوردرات</li>
+                        <li>يشاهد الأوردر الذي أنشأه أحمد</li>
+                        <li>يمكنه قبول أو رفض الأوردرات</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

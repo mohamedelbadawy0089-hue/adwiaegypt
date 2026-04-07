@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة التيلي سيلز</title>
+    <script src="navigation.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .back-arrow {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg, #ff6b6b, #dc3545);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.5);
+            transition: all 0.3s;
+            border: 3px solid white;
+            z-index: 1000;
+            outline: none;
+            user-select: none;
+        }
+        .back-arrow:hover {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            transform: scale(1.1) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(220, 53, 69, 0.7);
+        }
+        .back-arrow:active {
+            transform: scale(0.95);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+        }
+        .add-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 2px solid #667eea;
+        }
+        .add-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        .required {
+            color: #dc3545;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-add {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-add:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: right;
+            font-weight: bold;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: right;
+        }
+        tr:hover {
+            background: #f8f9ff;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            margin-left: 5px;
+        }
+        .btn-delete:hover {
+            background: #c82333;
+        }
+        .btn-view {
+            background: #17a2b8;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+            margin-left: 5px;
+        }
+        .btn-view:hover {
+            background: #138496;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .empty-text {
+            font-size: 18px;
+        }
+        .employee-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .employee-stat {
+            background: #e8f5e9;
+            padding: 4px 10px;
+            border-radius: 10px;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-arrow" onclick="goBack()" title="رجوع">←</div>
+    
+    <div class="container">
+        <h2>👥 إدارة التيلي سيلز (الموظفين)</h2>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="employeesCount">0</div>
+                <div class="stat-label">إجمالي الموظفين</div>
+            </div>
+        </div>
+        
+        <div class="add-section">
+            <div class="add-title">➕ إضافة موظف جديد</div>
+            <form onsubmit="handleSubmit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>اسم الموظف <span class="required">*</span></label>
+                        <input type="text" id="employeeName" oninput="checkFormValidity()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>الباسورد <span class="required">*</span></label>
+                        <input type="text" id="employeePassword" oninput="checkFormValidity()" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-add" id="submitBtn" disabled>إضافة الموظف</button>
+            </form>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 ابحث عن موظف..." oninput="filterEmployees()">
+        </div>
+        
+        <div class="table-container">
+            <table id="employeesTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>اسم الموظف</th>
+                        <th>الباسورد</th>
+                        <th>الإحصائيات</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="employeesBody"></tbody>
+            </table>
+            
+            <div class="empty-state" id="emptyState">
+                <div class="empty-icon">👥</div>
+                <div class="empty-text">لا يوجد موظفين مسجلين حالياً</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.userType !== 'admin') {
+            window.location.replace('login.html');
+        }
+        
+        let allEmployees = [];
+        
+        function checkFormValidity() {
+            const name = document.getElementById('employeeName').value.trim();
+            const password = document.getElementById('employeePassword').value.trim();
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (name && password) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        }
+        
+        function handleSubmit(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('employeeName').value.trim();
+            const password = document.getElementById('employeePassword').value.trim();
+            
+            if (!name || !password) {
+                alert('يرجى إدخال جميع البيانات');
+                return;
+            }
+            
+            if (!currentUser.employees) {
+                currentUser.employees = [];
+            }
+            
+            // التحقق من عدم تكرار الباسورد
+            const passwordExists = currentUser.employees.some(emp => emp.password === password);
+            if (passwordExists) {
+                alert('هذا الباسورد مستخدم بالفعل، يرجى اختيار باسورد آخر');
+                return;
+            }
+            
+            currentUser.employees.push({ name, password });
+            
+            // حفظ في localStorage
+            const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+            const userIndex = users.findIndex(u => u.email === currentUser.email);
+            if (userIndex !== -1) {
+                users[userIndex].employees = currentUser.employees;
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+            }
+            
+            // حفظ في IndexedDB
+            const request = indexedDB.open('WarehouseDB', 1);
+            request.onsuccess = function() {
+                const db = request.result;
+                if (db.objectStoreNames.contains('users')) {
+                    const tx = db.transaction(['users'], 'readwrite');
+                    const store = tx.objectStore('users');
+                    const getReq = store.getAll();
+                    getReq.onsuccess = function() {
+                        const allUsers = getReq.result;
+                        const user = allUsers.find(u => u.email === currentUser.email);
+                        if (user) {
+                            user.employees = currentUser.employees;
+                            store.put(user);
+                        }
+                    };
+                }
+            };
+            
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            document.getElementById('employeeName').value = '';
+            document.getElementById('employeePassword').value = '';
+            document.getElementById('submitBtn').disabled = true;
+            
+            loadEmployees();
+            alert('تم إضافة الموظف بنجاح');
+        }
+        
+        function loadEmployees() {
+            allEmployees = currentUser.employees || [];
+            displayEmployees(allEmployees);
+        }
+        
+        function displayEmployees(employees) {
+            document.getElementById('employeesCount').textContent = employees.length;
+            
+            if (employees.length === 0) {
+                document.getElementById('employeesTable').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('employeesTable').style.display = 'table';
+            document.getElementById('emptyState').style.display = 'none';
+            
+            const tbody = document.getElementById('employeesBody');
+            tbody.innerHTML = '';
+            
+            // حساب إحصائيات كل موظف
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const pharmacies = JSON.parse(localStorage.getItem('pharmacies')) || [];
+            
+            employees.forEach((employee, index) => {
+                // حساب عدد الأوردرات والصيدليات (يمكن تحسينه لاحقاً بإضافة userId للموظف)
+                const employeeOrders = 0; // يمكن تطويره
+                const employeePharmacies = 0; // يمكن تطويره
+                
+                const statsHtml = `
+                    <div class="employee-stats">
+                        <span class="employee-stat">📦 ${employeeOrders} أوردر</span>
+                        <span class="employee-stat">🏥 ${employeePharmacies} صيدلية</span>
+                    </div>
+                `;
+                
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>👤 ${employee.name}</strong></td>
+                        <td>🔑 ${employee.password}</td>
+                        <td>${statsHtml}</td>
+                        <td><span class="badge badge-active">✓ نشط</span></td>
+                        <td>
+                            <button class="btn-view" onclick="viewEmployeeDetails(${index})">📋 التفاصيل</button>
+                            <button class="btn-delete" onclick="deleteEmployee(${index})">🗑️ حذف</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        function filterEmployees() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allEmployees.filter(emp => 
+                emp.name.toLowerCase().includes(searchTerm) ||
+                emp.password.toLowerCase().includes(searchTerm)
+            );
+            displayEmployees(filtered);
+        }
+        
+        function viewEmployeeDetails(index) {
+            const employee = allEmployees[index];
+            if (!employee) return;
+            
+            // حساب إحصائيات الموظف
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const pharmacies = JSON.parse(localStorage.getItem('pharmacies')) || [];
+            
+            const userOrders = orders.filter(o => o.userId === currentUser.email);
+            const userPharmacies = pharmacies.filter(p => p.userId === currentUser.email);
+            
+            const completedOrders = userOrders.filter(o => o.status === 'completed');
+            const totalSales = completedOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+            
+            let message = `📋 تفاصيل الموظف\n\n`;
+            message += `👤 الاسم: ${employee.name}\n`;
+            message += `🔑 الباسورد: ${employee.password}\n\n`;
+            message += `📊 الإحصائيات:\n`;
+            message += `🏥 الصيدليات: ${userPharmacies.length}\n`;
+            message += `📦 الأوردرات: ${userOrders.length}\n`;
+            message += `✅ أوردرات مكتملة: ${completedOrders.length}\n`;
+            message += `💰 إجمالي المبيعات: ${totalSales.toFixed(2)} جنيه\n\n`;
+            message += `🔐 الصلاحيات:\n`;
+            message += `✓ إدارة الصيدليات\n`;
+            message += `✓ إدارة الأوردرات\n`;
+            message += `✗ إدارة المنتجات\n`;
+            message += `✗ إدارة رجال الدليفري\n`;
+            message += `✗ إدارة الموظفين`;
+            
+            alert(message);
+        }
+        
+        function deleteEmployee(index) {
+            const employee = allEmployees[index];
+            if (!confirm(`هل أنت متأكد من حذف الموظف "${employee.name}"؟`)) return;
+            
+            currentUser.employees.splice(index, 1);
+            
+            // حفظ في localStorage
+            const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+            const userIndex = users.findIndex(u => u.email === currentUser.email);
+            if (userIndex !== -1) {
+                users[userIndex].employees = currentUser.employees;
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+            }
+            
+            // حفظ في IndexedDB
+            const request = indexedDB.open('WarehouseDB', 1);
+            request.onsuccess = function() {
+                const db = request.result;
+                if (db.objectStoreNames.contains('users')) {
+                    const tx = db.transaction(['users'], 'readwrite');
+                    const store = tx.objectStore('users');
+                    const getReq = store.getAll();
+                    getReq.onsuccess = function() {
+                        const allUsers = getReq.result;
+                        const user = allUsers.find(u => u.email === currentUser.email);
+                        if (user) {
+                            user.employees = currentUser.employees;
+                            store.put(user);
+                        }
+                    };
+                }
+            };
+            
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            loadEmployees();
+            alert('تم حذف الموظف بنجاح');
+        }
+        
+        function goBack() {
+            window.location.replace('admin-dashboard.html');
+        }
+        
+        loadEmployees();
+    </script>
+    <script src="ai-core.js"></script>
+    <script src="ai-validation.js"></script>
+    <script src="ai-speech.js"></script>
+    <script src="ai-database.js"></script>
+    <script src="ai-ui.js"></script>
+    <script src="ai-assistant.js"></script>
+</body>
+</html>
