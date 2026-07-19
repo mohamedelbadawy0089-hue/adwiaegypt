@@ -17,22 +17,15 @@ const SupabaseConfig = {
     }
 };
 
-// إنشاء Supabase Client
-let supabaseClient = null;
-
+// إنشاء Supabase Client - باستخدام الـ Singleton فقط
 function getSupabaseClient() {
-    if (!supabaseClient && typeof window.supabase !== 'undefined') {
-        supabaseClient = window.supabase.createClient(SupabaseConfig.url, SupabaseConfig.key, {
-            auth: {
-                persistSession: true,
-                storage: window.localStorage,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-                flow: 'pkce'
-            }
-        });
+    // ✅ استخدام supabase-singleton.js فقط (منع تكرار الـ Client)
+    if (typeof window.SupabaseSingleton !== 'undefined') {
+        return window.SupabaseSingleton.getClient();
     }
-    return supabaseClient;
+    
+    console.warn('⚠️ SupabaseSingleton غير متوفر، يجب تحميل supabase-singleton.js أولاً');
+    return null;
 }
 
 // ═══════════════════════════════════════════════════════════════

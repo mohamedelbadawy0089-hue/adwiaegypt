@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif; direction: rtl;">
                     <h2 style="color: #dc3545;">❌ غير مصرح بالدخول</h2>
                     <p style="color: #6c757d;">يجب تسجيل الدخول أولاً للوصول إلى هذه الصفحة</p>
-                    <button onclick="window.location.href='login.html'" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px;">
+                    <button onclick="if(typeof window.showOfflineToast === 'function') window.showOfflineToast();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px;">
                         تسجيل الدخول
                     </button>
                     <button onclick="window.location.reload()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px;">
@@ -146,49 +146,63 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log('✅ المستخدم مسجل دخول، تحميل الصفحة...');
         
-        // تهيئة قاعدة البيانات المحلية
-let db;
-const dbName='WarehouseDB';
-const storeName='products';
-
-// فتح قاعدة البيانات
-function initDB(){
-    const request=indexedDB.open(dbName,1);
-    
-    request.onerror=function(){
-        console.error('فشل في فتح قاعدة البيانات');
-    };
-    
-    request.onsuccess=function(event){
-        db=event.target.result;
-        console.log('تم فتح قاعدة البيانات بنجاح');
-    };
-    
-    request.onupgradeneeded=function(event){
-        db=event.target.result;
-        
-        if(!db.objectStoreNames.contains(storeName)){
-            const objectStore=db.createObjectStore(storeName,{keyPath:'id',autoIncrement:true});
-            objectStore.createIndex('productName','productName',{unique:false});
-            objectStore.createIndex('price','price',{unique:false});
-            objectStore.createIndex('quantity','quantity',{unique:false});
+        // Initialize Supabase connection
+        async function initDB(){
+            try {
+                if (!window.SupabaseSingleton || !window.SupabaseSingleton.getClient()) {
+                    console.error('Supabase not available');
+                    return;
+                }
+                console.log('✅ Supabase initialized for add-product-complete');
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
+            }
         }
-    };
-}
 
-// التحقق من صحة النموذج
-function checkFormValidity(){
-    const productName=document.getElementById('productName').value;
-    const price=document.getElementById('price').value;
-    const quantity=document.getElementById('quantity').value;
-    const submitBtn=document.getElementById('submitBtn');
-    
-    if(productName&&price&&quantity){
-        submitBtn.disabled=false;
-    }else{
-        submitBtn.disabled=true;
-    }
-}
+        // ?????? ?? ?????? ??????
+        function checkFormValidity(){
+            const productName=document.getElementById('productName').value;
+            const price=document.getElementById('price').value;
+            const qty=document.getElementById('quantity').value;
+            const submitBtn=document.getElementById('submitBtn');
+            
+            if(productName&&price&&qty){
+                submitBtn.disabled=false;
+            }else{
+                submitBtn.disabled=true;
+            }
+        }
+        
+        // ?????? ?? Supabase
+        async function saveToSupabase(productData) {
+            try {
+                const supabaseClient = window.SupabaseSingleton.getClient();
+                const currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+                
+                const productWithWarehouse = {
+                    ...productData,
+                    warehouse_id: currentWarehouseId,
+                    product_name: productData.productName,
+                    price: productData.price,
+                    discount: productData.discount || 0,
+                    quantity: productData.quantity,
+                    is_unlimited: !productData.quantity,
+                    created_at: new Date().toISOString()
+                };
+                
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .insert([productWithWarehouse])
+                    .select();
+                
+                if (error) throw error;
+                
+                console.log('??? ????? ??????? ?? Supabase:', data);
+                
+            } catch (error) {
+                console.error('??? ?? ??? ??????? ?? Supabase:', error);
+            }
+        }
 
 // معالجة تقديم النموذج
 function handleSubmit(e){
@@ -213,15 +227,8 @@ function handleSubmit(e){
     products.push(productData);
     localStorage.setItem('products',JSON.stringify(products));
     
-    // حفظ في IndexedDB
-    if(db){
-        try{
-            const tx=db.transaction([storeName],'readwrite');
-            tx.objectStore(storeName).add(productData);
-        }catch(e){
-            console.error('خطأ في حفظ البيانات:',e);
-        }
-    }
+    // حفظ في Supabase
+    saveToSupabase(productData);
     
     // عرض رسالة نجاح
     showCustomAlert('تم إضافة المنتج بنجاح!','success');
@@ -261,7 +268,7 @@ function goBack(){
 
 // إضافة مستمعي الأحداث
 document.addEventListener('DOMContentLoaded',function(){
-    // تهيئة قاعدة البيانات
+    // تهيئة Supabase
     initDB();
     
     const form=document.getElementById('productForm');

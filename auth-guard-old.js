@@ -244,17 +244,14 @@ class AuthGuard {
         }
     }
     
-    // إنشاء Supabase Client مع التخزين التلقائي
+    // ✅ استخدام SupabaseSingleton بدلاً من إنشاء client جديد
     createSupabaseClient() {
-        return window.supabase.createClient(this.supabaseUrl, this.supabaseKey, {
-            auth: {
-                persistSession: true,        // حفظ الجلسة تلقائياً
-                storage: window.localStorage,  // التخزين في localStorage
-                autoRefreshToken: true,       // تحديث التوكن تلقائياً
-                detectSessionInUrl: true,     // كشف الجلسة من URL
-                flow: 'pkce'                  // PKCE flow للأمان
-            }
-        });
+        if (typeof window.SupabaseSingleton !== 'undefined') {
+            console.log('✅ Auth Guard: استخدام SupabaseSingleton');
+            return window.SupabaseSingleton.getClient();
+        }
+        console.warn('⚠️ SupabaseSingleton غير متوفر');
+        return null;
     }
     
     // تنشيط الصفحة فوراً مع التحقق من سلامة الكود

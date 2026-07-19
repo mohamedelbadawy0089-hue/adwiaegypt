@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إنشاء أوردر</title>
     <script src="navigation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <style>
         body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
         .back-arrow {
@@ -45,8 +47,12 @@
             font-size: 12px; color: #999; font-weight: normal;
             background: #f8f9ff; padding: 5px 10px; border-radius: 5px;
         }
+        .search-container {
+            position: relative;
+            width: 100%;
+        }
         .search-input {
-            width: 100%; padding: 14px 20px; border: 3px solid #667eea; border-radius: 8px;
+            width: 100%; padding: 14px 20px 14px 105px; border: 3px solid #667eea; border-radius: 8px; /* Increased left padding for 2 buttons */
             font-size: 16px; box-sizing: border-box; margin-bottom: 15px;
             font-family: Arial, sans-serif; transition: all 0.3s; background: white;
         }
@@ -55,6 +61,57 @@
             border-color: #764ba2; 
             box-shadow: 0 0 15px rgba(102,126,234,0.5);
             transform: translateY(-2px);
+        }
+        .gemini-mic-container {
+            position: absolute;
+            left: 10px;
+            top: 25px; /* Centers roughly with the input */
+            transform: translateY(-50%);
+            display: flex;
+            gap: 8px; /* Support multiple icons */
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+        .gemini-mic-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        .gemini-mic-btn:hover {
+            transform: scale(1.1);
+        }
+        .gemini-mic-btn.listening {
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+            animation: pulse-gemini 1.5s infinite;
+        }
+        @keyframes pulse-gemini {
+            0% { box-shadow: 0 0 0 0 rgba(245, 87, 108, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(245, 87, 108, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 87, 108, 0); }
+        }
+        #speechBubble {
+            position: absolute;
+            bottom: 50px;
+            left: 0;
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         table { width: 100%; border-collapse: collapse; }
         th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; text-align: right; }
@@ -143,7 +200,6 @@
     <div class="container">
         <div class="header-row" style="display: flex; gap: 20px; align-items: stretch; margin-bottom: 20px;">
             <div class="pharmacy-card" id="pharmacyCard" style="margin-bottom: 0; flex: 1;"></div>
-            <div id="aiAssistantStaticContainer" style="width: 70px; display: flex; align-items: center; justify-content: center; position: relative;"></div>
         </div>
         
         <div class="preparation-card" id="preparationCard" style="display: none;">
@@ -171,7 +227,14 @@
                 <span>📦 اختر المنتجات</span>
                 <span class="keyboard-hint">💡 Ctrl+F للبحث | Enter للإضافة السريعة</span>
             </div>
-            <input type="text" class="search-input" id="searchInput" placeholder="🔍 ابحث عن منتج..." autocomplete="off">
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="🔍 ابحث عن منتج أو اطلب (مثال: 15 بانادول)..." autocomplete="off">
+                <div class="gemini-mic-container">
+                    <div id="speechBubble">...استمع الآن</div>
+                    <button id="simpleSearchMic" class="gemini-mic-btn" style="background: linear-gradient(135deg, #11998e, #38ef7d);" title="البحث الصوتي العادي">🎙️</button>
+                    <button id="portalMic" class="gemini-mic-btn" title="الطلب الصوتي الذكي">🎤</button>
+                </div>
+            </div>
             <div style="overflow-x:auto" id="tableWrapper"></div>
         </div>
         <div class="cart-section" id="cartSection">
@@ -242,7 +305,7 @@
         }
 
         window.currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        if (!window.currentUser) { window.location.replace('login.html'); }
+        if (!window.currentUser) { if(typeof window.showOfflineToast === 'function') window.showOfflineToast(); }
 
         window.pharmacy = JSON.parse(sessionStorage.getItem('selectedPharmacy'));
         if (!window.pharmacy) {
@@ -271,13 +334,126 @@
                 '<div class="info">📞 ' + pharmacy.pharmacyPhone + ' &nbsp;|&nbsp; 📍 ' + pharmacy.pharmacyAddress + '</div>' +
             '</div>';
         
-        // ===== البحث السريع والفوري =====
+        // ===== البحث من Supabase فقط =====
         var searchTimeout;
+        var currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+
         document.getElementById('searchInput').addEventListener('input', function() {
             clearTimeout(searchTimeout);
-            // بحث فوري بدون تأخير
-            renderTable(this.value);
+            var value = this.value.trim();
+
+            if (value.length >= 2) {
+                // البحث من Supabase بعد حرفين
+                searchTimeout = setTimeout(function() {
+                    performSupabaseSearch(value);
+                }, 300);
+            } else if (value.length === 0) {
+                // إظهار جميع المنتجات المحلية عند مسح البحث
+                renderTable('');
+            }
         });
+
+        // البحث في Supabase مع التصفية حسب warehouse_id
+        async function performSupabaseSearch(searchTerm) {
+            try {
+                // التحقق من وجود Supabase
+                if (!window.SupabaseSingleton || !window.SupabaseSingleton.getClient()) {
+                    console.warn('⚠️ Supabase غير متاح، استخدام البحث المحلي');
+                    renderTable(searchTerm);
+                    return;
+                }
+
+                const supabaseClient = window.SupabaseSingleton.getClient();
+
+                // إظهار حالة التحميل
+                document.getElementById('tableWrapper').innerHTML = '<div class="empty-state">🔍 جاري البحث في المخزن...</div>';
+
+                // البحث في Supabase مع warehouse_id filtering و ilike
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('*')
+                    .eq('warehouse_id', currentWarehouseId)
+                    .or(`name.ilike.%${searchTerm}%,barcode.ilike.%${searchTerm}%`)
+                    .limit(50)
+                    .order('name');
+
+                if (error) throw error;
+
+                // تحويل بيانات Supabase إلى تنسيق متوافق مع renderTable
+                var searchResults = (data || []).map(function(p) {
+                    return {
+                        productName: p.name,
+                        name: p.name,
+                        price: p.price || 0,
+                        discount: p.discount || 0,
+                        quantity: p.quantity || 0,
+                        isUnlimited: !p.quantity || p.quantity_type === 'fixed',
+                        productionDate: p.production_date || p.productionDate,
+                        expiryDate: p.expiry_date || p.expiryDate,
+                        id: p.id,
+                        source: 'supabase'
+                    };
+                });
+
+                // عرض النتائج
+                renderSearchResults(searchResults, searchTerm);
+
+            } catch (err) {
+                console.error('❌ خطأ في البحث من Supabase:', err);
+                // fallback للبحث المحلي
+                renderTable(searchTerm);
+            }
+        }
+
+        // عرض نتائج البحث من Supabase
+        function renderSearchResults(products, searchTerm) {
+            var wrapper = document.getElementById('tableWrapper');
+
+            if (products.length === 0) {
+                wrapper.innerHTML = '<div class="no-results">🔍 لا توجد منتجات بهذا الاسم في هذا المخزن</div>';
+                return;
+            }
+
+            var html = '<table><thead><tr>' +
+                '<th>#</th><th>اسم المنتج</th><th>السعر</th><th>الخصم</th>' +
+                '<th>بعد الخصم</th><th>الكمية المتاحة</th><th>تاريخ الإنتاج</th><th>تاريخ الانتهاء</th><th>الكمية</th>' +
+                '</tr></thead><tbody>';
+
+            products.forEach(function(p, i) {
+                var afterDiscount = p.price - (p.price * p.discount / 100);
+                var stockBadge = p.isUnlimited
+                    ? '<span class="badge badge-unlimited">متوفر دائماً</span>'
+                    : '<span class="badge badge-limited">' + p.quantity + '</span>';
+                var qty = cart[p.productName] || 0;
+                var enc = encodeURIComponent(p.productName);
+
+                // تظليل النص المطابق
+                var displayName = p.productName;
+                if (searchTerm) {
+                    var regex = new RegExp('(' + searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+                    displayName = p.productName.replace(regex, '<mark style="background: #ffeb3b; padding: 2px 4px; border-radius: 3px;">$1</mark>');
+                }
+
+                html += '<tr>' +
+                    '<td>' + (i + 1) + '</td>' +
+                    '<td><strong>' + displayName + '</strong></td>' +
+                    '<td>' + p.price.toFixed(2) + ' ج</td>' +
+                    '<td>' + p.discount + '%</td>' +
+                    '<td><strong>' + afterDiscount.toFixed(2) + ' ج</strong></td>' +
+                    '<td>' + stockBadge + '</td>' +
+                    '<td>' + (p.productionDate || '-') + '</td>' +
+                    '<td>' + (p.expiryDate || '-') + '</td>' +
+                    '<td><div class="qty-control">' +
+                        '<button class="qty-btn" data-name="' + enc + '" data-delta="-1">−</button>' +
+                        '<input class="qty-input" type="number" min="0" value="' + qty + '" data-name="' + enc + '">' +
+                        '<button class="qty-btn" data-name="' + enc + '" data-delta="1">+</button>' +
+                    '</div></td>' +
+                '</tr>';
+            });
+
+            html += '</tbody></table>';
+            wrapper.innerHTML = html;
+        }
         
         // تركيز تلقائي على حقل البحث عند تحميل الصفحة
         window.addEventListener('load', function() {
@@ -409,14 +585,53 @@
             setQty(name, Math.max(0, parseInt(e.target.value) || 0));
         });
 
-        function loadProducts() {
-            // تحميل من localStorage فقط (المصدر الرئيسي والموثوق)
+        async function loadProducts() {
+            try {
+                // محاولة تحميل من Supabase أولاً مع warehouse_id filtering
+                if (window.SupabaseSingleton && window.SupabaseSingleton.getClient()) {
+                    const supabaseClient = window.SupabaseSingleton.getClient();
+
+                    document.getElementById('tableWrapper').innerHTML = '<div class="empty-state">📦 جاري تحميل المنتجات...</div>';
+
+                    const { data, error } = await supabaseClient
+                        .from('products')
+                        .select('*')
+                        .eq('warehouse_id', currentWarehouseId)
+                        .limit(100)
+                        .order('name');
+
+                    if (!error && data && data.length > 0) {
+                        allProducts = data.map(function(p) {
+                            return {
+                                productName: p.name,
+                                name: p.name,
+                                price: p.price || 0,
+                                discount: p.discount || 0,
+                                quantity: p.quantity || 0,
+                                isUnlimited: !p.quantity || p.quantity_type === 'fixed',
+                                productionDate: p.production_date || p.productionDate,
+                                expiryDate: p.expiry_date || p.expiryDate,
+                                id: p.id,
+                                source: 'supabase'
+                            };
+                        });
+
+                        console.log('✅ تم تحميل', allProducts.length, 'منتج من Supabase');
+                        renderTable('');
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ فشل تحميل من Supabase:', e);
+            }
+
+            // fallback للتحميل من localStorage
             var lsProducts = JSON.parse(localStorage.getItem('products')) || [];
-            allProducts = lsProducts.filter(function(p) { 
-                return p.userId === currentUser.email; 
+            allProducts = lsProducts.filter(function(p) {
+                return p.userId === currentUser.email;
             });
-            
-            console.log('تم تحميل', allProducts.length, 'منتج من localStorage');
+
+            console.log('📦 تم تحميل', allProducts.length, 'منتج من localStorage');
             renderTable('');
         }
 
@@ -588,10 +803,8 @@
                 createdAt: new Date().toISOString()
             };
 
-            // حفظ الأوردر في localStorage
-            var orders = JSON.parse(localStorage.getItem('orders')) || [];
-            orders.push(orderData);
-            localStorage.setItem('orders', JSON.stringify(orders));
+            // Save to Supabase
+            saveOrderToSupabase(orderData);
 
             // خصم الكميات المدخلة فقط من localStorage
             var lsProducts = JSON.parse(localStorage.getItem('products')) || [];
@@ -657,45 +870,33 @@
             loadDeliveryPersons();
         }
 
-        function loadDeliveryPersons() {
-            var req = indexedDB.open('WarehouseDB', 5);
-            req.onupgradeneeded = function(e) {
-                var db = e.target.result;
-                if (!db.objectStoreNames.contains('delivery')) {
-                    var store = db.createObjectStore('delivery', { keyPath: 'id', autoIncrement: true });
-                    store.createIndex('userId', 'userId', { unique: false });
-                    store.createIndex('phone', 'phone', { unique: false });
-                }
-            };
-            req.onsuccess = function() {
-                var db = req.result;
-                if (!db.objectStoreNames.contains('delivery')) {
+        async function loadDeliveryPersons() {
+            try {
+                const supabaseClient = window.SupabaseSingleton.getClient();
+                const currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+                
+                const { data, error } = await supabaseClient
+                    .from('delivery_personnel')
+                    .select('*')
+                    .eq('warehouse_id', currentWarehouseId)
+                    .eq('is_active', true)
+                    .order('name', { ascending: true });
+                
+                if (error) throw error;
+                
+                allDeliveryPersons = data || [];
+                console.log('✅ تم تحميل رجال الدليفري من Supabase:', allDeliveryPersons);
+                
+                if (allDeliveryPersons.length === 0) {
                     loadDeliveryFromLocalStorage();
-                    return;
+                } else {
+                    displayDeliveryList();
                 }
-                var tx = db.transaction(['delivery'], 'readonly');
-                var store = tx.objectStore('delivery');
-                var index = store.index('userId');
-                var r = index.getAll(currentUser.email);
-                r.onsuccess = function() {
-                    allDeliveryPersons = r.result || [];
-                    console.log('تم تحميل رجال الدليفري من IndexedDB:', allDeliveryPersons);
-                    // عرض القائمة حتى لو كانت فارغة (لأن موضف التحضير قد يكون موجود)
-                    if (allDeliveryPersons.length === 0) {
-                        loadDeliveryFromLocalStorage();
-                    } else {
-                        displayDeliveryList();
-                    }
-                };
-                r.onerror = function() {
-                    console.log('خطأ في تحميل من IndexedDB، جاري التحميل من localStorage');
-                    loadDeliveryFromLocalStorage();
-                };
-            };
-            req.onerror = function() {
-                console.log('خطأ في فتح IndexedDB، جاري التحميل من localStorage');
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل رجال الدليفري:', error);
                 loadDeliveryFromLocalStorage();
-            };
+            }
         }
 
         function loadDeliveryFromLocalStorage() {
@@ -954,12 +1155,162 @@
             setTimeout(checkUrlForAutoAdd, 500);
         });
     </script>
-    
-    <script src="ai-core.js"></script>
-    <script src="ai-validation.js"></script>
-    <script src="ai-speech.js"></script>
-    <script src="ai-database.js"></script>
-    <script src="ai-ui.js"></script>
-    <script src="ai-assistant.js"></script>
+    <script src="gemini-voice-processor.js"></script>
+    <script>
+        // ============================================
+        // Gemini Order Voice Integration
+        // ============================================
+        class OrderVoiceSearch {
+            constructor() {
+                this.micBtn = document.getElementById('portalMic');
+                this.searchInput = document.getElementById('searchInput');
+                this.isListening = false;
+                this.recognition = null;
+                
+                if (this.micBtn) this.init();
+            }
+
+            async init() {
+                this.setupSpeech();
+                if (window.GeminiVoiceProcessor) {
+                    this.geminiProcessor = new window.GeminiVoiceProcessor();
+                }
+                this.micBtn.addEventListener('click', () => this.toggle());
+            }
+
+            setupSpeech() {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SR) return;
+
+                this.recognition = new SR();
+                this.recognition.lang = 'en-US'; 
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+
+                this.recognition.onstart = () => {
+                    this.isListening = true;
+                    this.micBtn.classList.add('listening');
+                    this.showSpeechBubble('...استمع الآن');
+                };
+
+                this.recognition.onresult = async (event) => {
+                    const transcripts = Array.from(event.results[0]).map(res => res.transcript);
+                    this.showSpeechBubble(transcripts[0]);
+                    await this.processResults(transcripts);
+                };
+
+                this.recognition.onerror = () => { this.stop(); };
+                this.recognition.onend = () => {
+                    this.isListening = false;
+                    this.micBtn.classList.remove('listening');
+                    setTimeout(() => this.hideSpeechBubble(), 2000);
+                };
+            }
+
+            toggle() { this.isListening ? this.stop() : this.start(); }
+            start() { try { if (this.recognition) this.recognition.start(); } catch (e) {} }
+            stop() { if (this.recognition) this.recognition.stop(); }
+
+            showSpeechBubble(text) {
+                const bubble = document.getElementById('speechBubble');
+                if (bubble) { bubble.textContent = text; bubble.style.display = 'block'; }
+            }
+
+            hideSpeechBubble() {
+                const bubble = document.getElementById('speechBubble');
+                if (bubble) bubble.style.display = 'none';
+            }
+
+            async processResults(transcripts) {
+                if (!this.geminiProcessor) return;
+
+                const contextEntities = allProducts.map(p => ({
+                    tradeName: p.productName || p.name
+                }));
+
+                const result = await this.geminiProcessor.processVoiceInput(transcripts, contextEntities, 'portal-order');
+                
+                if (result && result.confidence > 0.4) {
+                    if (result.action === 'order' && result.quantity > 0) {
+                        const added = window.setQty(result.correctedDrug, result.quantity);
+                        if (added && added.success) {
+                            this.showSpeechBubble(`✅ تم إضافة ${result.quantity}x ${result.correctedDrug}`);
+                            // Open cart smoothly
+                            document.getElementById('cartSection').scrollIntoView({ behavior: 'smooth' });
+                            
+                            // Audio feedback if required
+                            const utt = new SpeechSynthesisUtterance(`تمت إضافة ${result.quantity} من ${result.correctedDrug}`);
+                            utt.lang = 'ar-EG';
+                            window.speechSynthesis.speak(utt);
+                        } else if (added && added.warning) {
+                            this.showSpeechBubble(`⚠️ ${added.warning}`);
+                        }
+                    } else {
+                        // Regular Search mode
+                        this.searchInput.value = result.correctedDrug || transcripts[0];
+                        // Trigger input event
+                        this.searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        this.showSpeechBubble('بحث عن: ' + this.searchInput.value);
+                    }
+                } else {
+                    this.showSpeechBubble('لم يتم التعرف على الدواء');
+                }
+            }
+        }
+
+        class SimpleVoiceSearch {
+            constructor() {
+                this.micBtn = document.getElementById('simpleSearchMic');
+                this.searchInput = document.getElementById('searchInput');
+                if (this.micBtn) this.init();
+            }
+            init() {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SR) { this.micBtn.style.display = 'none'; return; }
+                this.recognition = new SR();
+                this.recognition.lang = 'ar-EG'; 
+                this.recognition.continuous = false;
+                this.recognition.interimResults = true;
+
+                this.recognition.onstart = () => {
+                    this.micBtn.classList.add('listening');
+                    this.searchInput.placeholder = "جاري الاستماع للبحث...";
+                };
+                this.recognition.onresult = (event) => {
+                    let finalTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+                    }
+                    if (finalTranscript) {
+                        this.searchInput.value = finalTranscript;
+                        this.searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                };
+                this.recognition.onend = () => {
+                    this.micBtn.classList.remove('listening');
+                    this.searchInput.placeholder = "🔍 ابحث عن منتج أو اطلب (مثال: 15 بانادول)...";
+                };
+                this.micBtn.addEventListener('click', () => {
+                    try { this.searchInput.value = ''; this.recognition.start(); } catch(e){}
+                });
+            }
+        }
+
+        window.addEventListener('load', function() {
+            window.orderVoiceSearch = new OrderVoiceSearch();
+            window.simpleVoiceSearch = new SimpleVoiceSearch();
+            
+            // Hard cleanup: Ensure no old AI Assistant Panels persist from ANY cached scripts
+            const killPanel = () => {
+                const panels = document.querySelectorAll('[id*="ai-assistant"], [class*="ai-assistant"], [id*="aiAssistant"], [class*="aiAssistant"], #ai-ui-root');
+                panels.forEach(p => {
+                    p.style.display = 'none';
+                    p.remove();
+                });
+            };
+            killPanel();
+            setTimeout(killPanel, 500);
+        });
+    </script>
 </body>
 </html>

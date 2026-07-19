@@ -1,29 +1,34 @@
 // إعدادات الاتصال بـ Supabase
-class SupabaseConfig {
-    constructor() {
-        // إعدادات Supabase - بيانات الاتصال الفعلية
-        this.supabaseUrl = 'https://iksjhjxwphmvthryfeae.supabase.co';
-        this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlrc2poanh3cGhtdnRocnlmZWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2NjE5NjEsImV4cCI6MjA1MDIzNzk2MX0.3b7wQ8v7hXkL5yF6Z7mN8pQ9rR0sT1uV2wX3yZ4a5b';
-        this.client = null;
+if (!window.SupabaseConfig) {
+    class SupabaseConfig {
+        constructor() {
+            // إعدادات Supabase - بيانات الاتصال الفعلية
+            this.supabaseUrl = 'https://iksjhjxwphmvthryfeae.supabase.co';
+            this.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlrc2poanh3cGhtdnRocnlmZWFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2NjE5NjEsImV4cCI6MjA1MDIzNzk2MX0.3b7wQ8v7hXkL5yF6Z7mN8pQ9rR0sT1uV2wX3yZ4a5b';
+            this.client = null;
         this.isConnected = false;
     }
 
-    // تهيئة الاتصال بـ Supabase
+    // تهيئة الاتصال بـ Supabase - باستخدام الـ Singleton فقط
     async init() {
         try {
-            // تحميل مكتبة Supabase إذا لم تكن محملة
-            if (typeof supabase === 'undefined') {
-                await this.loadSupabaseLibrary();
+            // ✅ استخدام supabase-singleton.js فقط (منع تكرار الـ Client)
+            if (typeof window.SupabaseSingleton !== 'undefined') {
+                this.client = window.SupabaseSingleton.getClient();
+                console.log('✅ Supabase Config: استخدام الـ Client من SupabaseSingleton');
+            } else {
+                console.warn('⚠️ SupabaseSingleton غير متوفر، سيتم تحميله...');
+                // انتظر قليلاً ثم أعد المحاولة
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (typeof window.SupabaseSingleton !== 'undefined') {
+                    this.client = window.SupabaseSingleton.getClient();
+                    console.log('✅ Supabase Config: تم الاتصال بـ SupabaseSingleton بعد الانتظار');
+                } else {
+                    throw new Error('SupabaseSingleton غير متوفر');
+                }
             }
-
-            // إنشاء عميل Supabase
-            this.client = supabase.createClient(this.supabaseUrl, this.supabaseKey);
-            
-            // اختبار الاتصال
-            await this.testConnection();
             
             this.isConnected = true;
-            console.log('✅ تم الاتصال بـ Supabase بنجاح');
             
             // إشعار المساعد
             if (window.AIUI) {
@@ -74,6 +79,38 @@ class SupabaseConfig {
         return data;
     }
 
+    // التحقق السريع من الجلسة باستخدام auth.getSession() - أسرع من getUser()
+    async checkSessionFast() {
+        try {
+            console.log('🔍 التحقق السريع من الجلسة...');
+            
+            // استخدام auth.getSession() للقراءة مباشرة من LocalStorage
+            const { data: { session }, error } = await this.client.auth.getSession();
+            
+            if (error) {
+                console.error('❌ خطأ في جلب الجلسة:', error);
+                throw error;
+            }
+
+            if (session && session.user) {
+                console.log('✅ جلسة صالحة من LocalStorage:', session.user.email);
+                
+                // حفظ بيانات المستخدم
+                localStorage.setItem('slamtak-user-id', session.user.id);
+                localStorage.setItem('slamtak-user-email', session.user.email);
+                localStorage.setItem('slamtak-auth-status', 'authenticated');
+                
+                return session;
+            } else {
+                console.log('⚠️ لا توجد جلسة في LocalStorage');
+                return null;
+            }
+        } catch (error) {
+            console.error('❌ خطأ في التحقق السريع من الجلسة:', error);
+            throw error;
+        }
+    }
+
     // حفظ منتجات في Supabase
     async saveProducts(products) {
         if (!this.isConnected) {
@@ -114,16 +151,26 @@ class SupabaseConfig {
         }
     }
 
-    // استرجاع المنتجات من Supabase
+    // استرجاع المنتجات من Supabase (فقط للمخزن الحالي)
     async getProducts(limit = 100) {
         if (!this.isConnected) {
             throw new Error('غير متصل بقاعدة البيانات');
+        }
+
+        // الحصول على warehouse_id الحالي
+        const warehouseId = localStorage.getItem('current_warehouse_id') || 
+                           localStorage.getItem('slamtak-user-id');
+        
+        if (!warehouseId) {
+            console.warn('⚠️ لا يوجد warehouse_id - لا يمكن جلب المنتجات');
+            return [];
         }
 
         try {
             const { data, error } = await this.client
                 .from('products')
                 .select('*')
+                .eq('warehouse_id', warehouseId)
                 .limit(limit)
                 .order('created_at', { ascending: false });
 
@@ -155,17 +202,33 @@ class SupabaseConfig {
         }
     }
 
-    // البحث عن المنتجات
+    // البحث عن المنتجات (فقط للمخزن الحالي - يبدأ من حرفين)
     async searchProducts(query, limit = 50) {
         if (!this.isConnected) {
             throw new Error('غير متصل بقاعدة البيانات');
+        }
+
+        // الحصول على warehouse_id الحالي
+        const warehouseId = localStorage.getItem('current_warehouse_id') || 
+                           localStorage.getItem('slamtak-user-id');
+        
+        if (!warehouseId) {
+            console.warn('⚠️ لا يوجد warehouse_id - لا يمكن البحث');
+            return [];
+        }
+
+        // التحقق من طول الاستعلام (يبدأ البحث من حرفين)
+        if (!query || query.trim().length < 2) {
+            console.log('🔍 البحث يتطلب حرفين على الأقل');
+            return [];
         }
 
         try {
             const { data, error } = await this.client
                 .from('products')
                 .select('*')
-                .or(`name.ilike.%${query}%,barcode.ilike.%${query}%`)
+                .eq('warehouse_id', warehouseId)
+                .or(`name.ilike.${query}%,barcode.ilike.${query}%`)
                 .limit(limit)
                 .order('name');
 
@@ -284,8 +347,10 @@ class SupabaseConfig {
     }
 }
 
-// إنشاء نسخة عالمية من الإعدادات
-window.SupabaseManager = new SupabaseConfig();
+// Creating a global instance of the settings (only if not already exists)
+if (!window.SupabaseManager) {
+    window.SupabaseManager = new SupabaseConfig();
+}
 
 // تهيئة تلقائية عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', async () => {
@@ -298,4 +363,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 // تصدير الإعدادات للاستخدام في ملفات أخرى
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = SupabaseConfig;
+}
 }

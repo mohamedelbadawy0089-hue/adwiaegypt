@@ -1,4 +1,4 @@
-﻿// نظام البحث الصوتي العائم
+// نظام البحث الصوتي العائم
 (function() {
     'use strict';
 
@@ -13,7 +13,7 @@
     const recognition = new SpeechRecognition();
     
     // إعدادات التعرف على الصوت
-    recognition.lang = 'ar-EG'; // اللهجة المصرية
+    recognition.lang = 'en-US'; 
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -180,7 +180,7 @@
         }
         
         // البحث في صفحة الأوردرات
-        if (currentPage === 'orders.html') {
+        if (currentPage === 'analytics.html') {
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.value = searchText;
@@ -188,17 +188,7 @@
                 return true;
             }
         }
-        
-        // البحث في صفحة التيلي سيلز
-        if (currentPage === 'telesales-file.html') {
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.value = searchText;
-                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-                return true;
-            }
-        }
-        
+
         return false;
     }
 

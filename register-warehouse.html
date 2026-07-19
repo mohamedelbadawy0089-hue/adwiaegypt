@@ -69,6 +69,17 @@
 <input type="password" id="confirmPassword" required placeholder="أعد كتابة كلمة المرور">
 <button type="button" class="show-btn" onclick="togglePassword('confirmPassword')">إظهار</button>
 </div>
+<div class="field">
+<label for="adminPassword">كلمة سر المدير *</label>
+<input type="password" id="adminPassword" required placeholder="كلمة سر خاصة بالمدير">
+<button type="button" class="show-btn" onclick="togglePassword('adminPassword')">إظهار</button>
+</div>
+<div class="field">
+<label for="confirmAdminPassword">تأكيد كلمة سر المدير *</label>
+<input type="password" id="confirmAdminPassword" required placeholder="أعد كتابة كلمة سر المدير">
+<button type="button" class="show-btn" onclick="togglePassword('confirmAdminPassword')">إظهار</button>
+<div id="adminPasswordError" style="color: #dc3545; font-size: 14px; margin-top: 5px; display: none;">⚠️ كلمتا سر المدير غير متطابقتين</div>
+</div>
 <button class="btn btn-success" type="submit">تسجيل المخزن</button>
 <div class="error" id="generalError"></div>
 </form>

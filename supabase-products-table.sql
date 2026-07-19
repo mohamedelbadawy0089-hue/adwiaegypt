@@ -9,17 +9,17 @@ CREATE TABLE IF NOT EXISTS products (
     -- المعرف الفريد (يتم إنشاؤه تلقائياً)
     id BIGSERIAL PRIMARY KEY,
     
-    -- اسم المنتج (مطلوب)
+    -- اسم المنتج (مطلوب - إجباري)
     name TEXT NOT NULL,
     
-    -- الكمية (مطلوب)
-    quantity INTEGER NOT NULL DEFAULT 0,
+    -- الكمية (اختياري)
+    quantity INTEGER DEFAULT 0,
     
-    -- السعر (مطلوب - يدعم الكسور)
-    price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    -- الخصم (إجباري)
+    discount DECIMAL(5, 2) NOT NULL CHECK (discount >= 0 AND discount <= 100),
     
-    -- الخصم (نسبة مئوية)
-    discount DECIMAL(5, 2) DEFAULT 0.00,
+    -- السعر (إجباري)
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
     
     -- تاريخ الإنتاج (اختياري)
     production_date DATE,
@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS products (
     -- تاريخ الانتهاء (اختياري)
     expiry_date DATE,
     
-    -- معرف المخزن (مطلوب)
-    warehouse_id TEXT NOT NULL DEFAULT 'default',
+    -- معرف المخزن (مطلوب - Foreign Key إلى warehouses)
+    warehouse_id TEXT NOT NULL DEFAULT 'default' REFERENCES warehouses(id) ON DELETE CASCADE,
     
     -- تاريخ الإضافة (يتم إنشاؤه تلقائياً)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

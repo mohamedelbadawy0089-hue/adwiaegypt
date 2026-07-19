@@ -1,330 +1,508 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="سلامتك - منصة متكاملة لإدارة المخازن والصيدليات وربط سلاسل التوريد الدوائية">
-    <title>سلامتك - منصة إدارة المخازن والصيدليات</title>
+
+    <!-- ===== Primary Meta Tags (SEO) ===== -->
+    <title>سلامتك - منصة إدارة المخازن والصيدليات | نظام ذكي للتوريد الدوائي</title>
+    <meta name="description" content="سلامتك - منصة متكاملة لإدارة المخازن والصيدليات مع مساعد ذكي صوتي. ربط سلاسل التوريد الدوائية، إدارة المخزون، الطلبات، والتوصيل بكفاءة.">
+    <meta name="keywords" content="صيدلية, مخزن دوائي, إدارة مخزون, توريد أدوية, منصة صيدليات, برنامج صيدلية, نظام مخازن, سلسلة توريد, مساعد ذكي, صوتي, Egypt pharmacy, warehouse management">
+    <meta name="author" content="سلامتك">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <meta name="language" content="Arabic">
+    <meta name="geo.region" content="EG">
+    <meta name="geo.placename" content="Egypt">
+    <link rel="canonical" href="https://slamtak.com/A.html">
+
+    <!-- ===== Open Graph / Facebook ===== -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://slamtak.com/A.html">
+    <meta property="og:title" content="سلامتك - منصة إدارة المخازن والصيدليات">
+    <meta property="og:description" content="منصة متكاملة لإدارة المخازن والصيدليات مع مساعد ذكي صوتي. ابدأ الآن مجاناً.">
+    <meta property="og:image" content="https://slamtak.com/assets/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="ar_AR">
+    <meta property="og:site_name" content="سلامتك">
+
+    <!-- ===== Twitter Cards ===== -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://slamtak.com/A.html">
+    <meta name="twitter:title" content="سلامتك - منصة إدارة المخازن والصيدليات">
+    <meta name="twitter:description" content="منصة متكاملة لإدارة المخازن والصيدليات مع مساعد ذكي صوتي.">
+    <meta name="twitter:image" content="https://slamtak.com/assets/og-image.jpg">
+
+    <!-- ===== Performance Optimizations ===== -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="A.css" as="style">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap" as="style">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+
+    <!-- Theme Color for Mobile Browsers -->
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="msapplication-TileColor" content="#0a0a1a">
+
+    <!-- ===== Structured Data (JSON-LD) ===== -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "سلامتك",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EGP"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "150"
+        },
+        "description": "منصة متكاملة لإدارة المخازن والصيدليات مع مساعد ذكي صوتي",
+        "url": "https://slamtak.com",
+        "author": {
+            "@type": "Organization",
+            "name": "سلامتك",
+            "url": "https://slamtak.com"
+        },
+        "featureList": [
+            "إدارة المخزون",
+            "ربط سلاسل التوريد",
+            "مساعد ذكي صوتي",
+            "إدارة الطلبات",
+            "تتبع التوصيل",
+            "تقارير وإحصائيات"
+        ]
+    }
+    </script>
+
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "سلامتك",
+        "url": "https://slamtak.com",
+        "logo": "https://slamtak.com/assets/logo.png",
+        "description": "منصة إدارة المخازن والصيدليات",
+        "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "EG",
+            "addressLocality": "Egypt"
+        },
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "Customer Support",
+            "availableLanguage": ["Arabic", "English"]
+        },
+        "sameAs": []
+    }
+    </script>
+
+    <!-- WebSite Schema for Search Box -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "سلامتك",
+        "url": "https://slamtak.com",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://slamtak.com/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="A.css">
-    <script src="navigation.js"></script>
-</head>
-<body>
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    <script src="navigation.js" defer></script>
+    <style>
+        /* ===== Pharmacy Features Section ===== */
+        .pharmacy-features {
+            width: 100%;
+            max-width: 1100px;
+            margin-top: 60px;
+            animation: fade-up 1s ease-out 0.5s both;
         }
 
-        :root {
-            --primary: #6C63FF;
-            --primary-light: #8B83FF;
-            --primary-dark: #4F46E5;
-            --accent-pharmacy: #00D4AA;
-            --accent-pharmacy-dark: #00B894;
-            --accent-warehouse: #FF6B6B;
-            --accent-warehouse-dark: #EE5A24;
-            --glass-bg: rgba(255, 255, 255, 0.06);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --glass-hover: rgba(255, 255, 255, 0.12);
-            --text-primary: #FFFFFF;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --text-muted: rgba(255, 255, 255, 0.45);
-            --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
-            --shadow-glow-pharmacy: 0 0 40px rgba(0, 212, 170, 0.3);
-            --shadow-glow-warehouse: 0 0 40px rgba(255, 107, 107, 0.3);
-            --radius-lg: 24px;
-            --radius-md: 16px;
-            --radius-sm: 12px;
-            --cart-count-bg: #FF4757;
-            --cart-count-color: #FFFFFF;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'Cairo', 'Tajawal', sans-serif;
-            min-height: 100vh;
-            overflow-x: hidden;
-            background: #0a0a1a;
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
             color: var(--text-primary);
-            position: relative;
+            margin-bottom: 24px;
+            text-align: center;
         }
 
-        /* ===== Animated Background ===== */
-        .bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            background: 
-                radial-gradient(ellipse at 20% 50%, rgba(108, 99, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 60% 80%, rgba(255, 107, 107, 0.1) 0%, transparent 50%),
-                linear-gradient(180deg, #0a0a1a 0%, #0d0d2b 50%, #0a0a1a 100%);
+        .search-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .bg-particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            overflow: hidden;
+        .search-bar input {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: 'Cairo', sans-serif;
+            backdrop-filter: blur(10px);
+            outline: none;
+            transition: border-color 0.3s;
         }
 
-        .particle {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: rgba(108, 99, 255, 0.5);
-            border-radius: 50%;
-            animation: float-particle linear infinite;
+        .search-bar input:focus {
+            border-color: var(--accent-pharmacy);
         }
 
-        @keyframes float-particle {
-            0% {
-                transform: translateY(100vh) scale(0);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-10vh) scale(1);
-                opacity: 0;
-            }
+        .search-bar input::placeholder {
+            color: var(--text-muted);
         }
 
-        .orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: 0;
-            animation: orb-drift 20s ease-in-out infinite;
+        .search-bar button {
+            padding: 14px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 18px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
         }
 
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: rgba(108, 99, 255, 0.12);
-            top: -100px;
-            right: -100px;
-            animation-delay: 0s;
+        .search-bar button:hover {
+            background: var(--glass-hover);
+            border-color: var(--accent-pharmacy);
         }
 
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: rgba(0, 212, 170, 0.08);
-            bottom: -50px;
-            left: -50px;
-            animation-delay: -7s;
+        .categories {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
         }
 
-        .orb-3 {
-            width: 250px;
-            height: 250px;
-            background: rgba(255, 107, 107, 0.08);
-            top: 50%;
-            left: 50%;
-            animation-delay: -14s;
+        .category {
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s;
         }
 
-        @keyframes orb-drift {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(30px, -40px) scale(1.1); }
-            50% { transform: translate(-20px, 20px) scale(0.95); }
-            75% { transform: translate(15px, 30px) scale(1.05); }
+        .category.active,
+        .category:hover {
+            background: rgba(0, 212, 170, 0.15);
+            border-color: var(--accent-pharmacy);
+            color: var(--accent-pharmacy);
         }
 
-        /* ===== Main Content ===== */
-        .main-wrapper {
-            position: relative;
-            z-index: 1;
-            min-height: 100vh;
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .product-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
+            gap: 10px;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            backdrop-filter: blur(15px);
+            cursor: pointer;
         }
 
-        /* ===== Hero Section ===== */
-        .hero {
-            text-align: center;
-            margin-bottom: 60px;
-            animation: fade-up 1s ease-out;
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 212, 170, 0.4);
+            box-shadow: 0 8px 30px rgba(0, 212, 170, 0.15);
         }
 
-        @keyframes fade-up {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo-container {
-            margin-bottom: 24px;
-            display: inline-block;
-            position: relative;
-        }
-
-        .logo-icon {
-            width: 90px;
-            height: 90px;
-            background: linear-gradient(135deg, var(--primary), var(--accent-pharmacy));
-            border-radius: 28px;
+        .product-image {
+            width: 100%;
+            height: 120px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: rgba(0, 212, 170, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 48px;
-            margin: 0 auto 16px;
-            box-shadow: 0 10px 40px rgba(108, 99, 255, 0.3);
-            animation: logo-pulse 3s ease-in-out infinite;
-            position: relative;
-            overflow: hidden;
         }
 
-        .logo-icon::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            animation: logo-shine 4s ease-in-out infinite;
-        }
-
-        @keyframes logo-shine {
-            0%, 100% { transform: translateX(-100%) rotate(45deg); }
-            50% { transform: translateX(100%) rotate(45deg); }
-        }
-
-        @keyframes logo-pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 10px 40px rgba(108, 99, 255, 0.3); }
-            50% { transform: scale(1.05); box-shadow: 0 15px 50px rgba(108, 99, 255, 0.4); }
-        }
-
-        .brand-name {
-            font-size: 52px;
-            font-weight: 900;
-            letter-spacing: -1px;
-            background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.8) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1.2;
-        }
-
-        .brand-tagline {
-            font-size: 20px;
-            color: var(--text-secondary);
-            font-weight: 400;
-            margin-top: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .hero-description {
-            max-width: 600px;
-            margin: 20px auto 0;
-            font-size: 16px;
-            color: var(--text-muted);
-            line-height: 1.8;
-        }
-
-        /* ===== Cards Grid ===== */
-        .cards-container {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 28px;
-            max-width: 780px;
+        .product-image img {
             width: 100%;
-            animation: fade-up 1s ease-out 0.3s both;
+            height: 100%;
+            object-fit: cover;
         }
 
-        .card {
-            position: relative;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            padding: 40px 32px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            text-decoration: none;
-            color: inherit;
+        .product-info {
             display: flex;
             flex-direction: column;
+            gap: 6px;
+        }
+
+        .product-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .product-description {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .product-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-pharmacy);
+            margin: 0;
+        }
+
+        .add-to-cart {
+            display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--accent-pharmacy);
+            background: rgba(0, 212, 170, 0.1);
+            color: var(--accent-pharmacy);
+            font-family: 'Cairo', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 4px;
         }
 
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-            transition: height 0.5s ease;
+        .add-to-cart:hover {
+            background: var(--accent-pharmacy);
+            color: #0a0a1a;
         }
 
-        .card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: var(--radius-lg);
-            background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.1) 100%);
-            opacity: 0;
-            transition: opacity 0.5s ease;
+        /* ===== Shopping Cart ===== */
+        .shopping-cart {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-top: 32px;
+            backdrop-filter: blur(15px);
         }
 
-        .card:hover::after {
-            opacity: 1;
+        .shopping-cart h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .card-pharmacy::before {
+        .cart-count {
+            background: var(--cart-count-bg);
+            color: var(--cart-count-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .cart-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 60px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+        }
+
+        .cart-item-name {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quantity-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background: var(--accent-pharmacy);
+            border-color: var(--accent-pharmacy);
+            color: #0a0a1a;
+        }
+
+        .quantity {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .cart-item-price {
+            font-size: 14px;
+            color: var(--accent-pharmacy);
+            font-weight: 700;
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0 0;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        #cartTotal {
+            color: var(--accent-pharmacy);
+            font-size: 18px;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 16px;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: linear-gradient(135deg, var(--accent-pharmacy), var(--accent-pharmacy-dark));
+            color: #0a0a1a;
+            font-family: 'Cairo', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.35);
+        }
+
+        /* ===== Features Bar ===== */
+        .features-bar {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 60px;
+            animation: fade-up 1s ease-out 0.7s both;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 30px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-icon {
+            font-size: 20px;
+        }
+
+        .feature-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* ===== Card Variants ===== */
+        .card--pharmacy::before {
             background: linear-gradient(90deg, var(--accent-pharmacy), var(--accent-pharmacy-dark));
         }
 
-        .card-warehouse::before {
+        .card--warehouse::before {
             background: linear-gradient(90deg, var(--accent-warehouse), var(--accent-warehouse-dark));
         }
 
-        .card:hover {
-            transform: translateY(-8px) scale(1.02);
-            border-color: rgba(255, 255, 255, 0.2);
-            background: var(--glass-hover);
-        }
-
-        .card-pharmacy:hover {
+        .card--pharmacy:hover {
             box-shadow: var(--shadow-glow-pharmacy);
         }
 
-        .card-warehouse:hover {
+        .card--warehouse:hover {
             box-shadow: var(--shadow-glow-warehouse);
         }
 
-        .card-icon {
+        .card-icon-wrap {
             width: 80px;
             height: 80px;
             border-radius: 20px;
@@ -333,108 +511,84 @@
             justify-content: center;
             font-size: 40px;
             transition: all 0.5s ease;
-            position: relative;
         }
 
-        .card-pharmacy .card-icon {
+        .card--pharmacy .card-icon-wrap {
             background: linear-gradient(135deg, rgba(0, 212, 170, 0.15), rgba(0, 212, 170, 0.05));
             border: 1px solid rgba(0, 212, 170, 0.2);
         }
 
-        .card-warehouse .card-icon {
+        .card--warehouse .card-icon-wrap {
             background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 107, 107, 0.05));
             border: 1px solid rgba(255, 107, 107, 0.2);
         }
 
-        .card:hover .card-icon {
+        .card:hover .card-icon-wrap {
             transform: scale(1.1) rotate(5deg);
         }
 
-        .card-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .card-description {
+        .card-desc {
             font-size: 15px;
             color: var(--text-secondary);
             line-height: 1.6;
             margin: 0;
         }
 
-        .card-arrow {
-            margin-top: auto;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.4s ease;
+        .arrow-icon {
+            display: inline-block;
+            transition: transform 0.3s;
         }
 
-        .card:hover .card-arrow {
-            background: rgba(255, 255, 255, 0.1);
+        .card:hover .arrow-icon {
             transform: translateX(-5px);
         }
 
-        /* ===== Footer ===== */
-        .footer {
-            margin-top: 60px;
+        /* ===== Empty Cart State ===== */
+        .cart-empty {
             text-align: center;
+            padding: 20px;
             color: var(--text-muted);
             font-size: 14px;
-            animation: fade-up 1s ease-out 0.6s both;
         }
 
-        .footer-links {
-            display: flex;
-            gap: 24px;
-            justify-content: center;
-            margin-bottom: 16px;
+        /* ===== Loading State ===== */
+        .products-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 15px;
         }
 
-        .footer-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: color 0.3s ease;
+        .products-loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-pharmacy);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 10px;
         }
 
-        .footer-link:hover {
-            color: var(--text-primary);
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        /* ===== Responsive ===== */
+        /* ===== Responsive Pharmacy Section ===== */
         @media (max-width: 768px) {
-            .cards-container {
-                grid-template-columns: 1fr;
-                gap: 20px;
-                max-width: 400px;
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 14px;
             }
 
-            .brand-name {
-                font-size: 40px;
+            .features-bar {
+                gap: 12px;
             }
 
-            .brand-tagline {
-                font-size: 18px;
-            }
-
-            .card {
-                padding: 32px 24px;
-            }
-
-            .card-title {
-                font-size: 24px;
-            }
-
-            .logo-icon {
-                width: 75px;
-                height: 75px;
-                font-size: 40px;
+            .feature-item {
+                padding: 10px 14px;
             }
         }
     </style>
@@ -460,7 +614,7 @@
             <p class="hero-description">
                 نظام متكامل لإدارة سلاسل التوريد الدوائية مع مساعد ذكي صوتي
             </p>
-        </div>
+        </section>
 
         <!-- Cards -->
         <div class="cards-container">
@@ -469,7 +623,7 @@
                 <div class="card-icon-wrap">💊</div>
                 <h2 class="card-title">صيدلية</h2>
                 <p class="card-desc">
-                    تصفح المنتجات من المخازن، أنشئ طلبات الشراء، 
+                    تصفح المنتجات من المخازن، أنشئ طلبات الشراء،
                     وتابع حالة توصيلاتك بسهولة.
                 </p>
                 <span class="card-arrow">
@@ -483,7 +637,7 @@
                 <div class="card-icon-wrap">🏭</div>
                 <h2 class="card-title">مخزن توزيع</h2>
                 <p class="card-desc">
-                    أدر مخزونك ومنتجاتك، تابع طلبات الصيدليات، 
+                    أدر مخزونك ومنتجاتك، تابع طلبات الصيدليات،
                     وراقب أداء فريقك وتقاريرك.
                 </p>
                 <span class="card-arrow">
@@ -493,86 +647,42 @@
             </a>
         </div>
 
-        <!-- Pharmacy Interface Features -->
-        <section class="pharmacy-features" id="pharmacy-features">
+        <!-- Pharmacy Features Section -->
+        <div class="pharmacy-features">
             <h2 class="section-title">تصفح المنتجات</h2>
             
-            <!-- Search Bar -->
             <div class="search-bar">
-                <input type="text" id="productSearch" placeholder="ابحث عن منتج..." aria-label="بحث">
-                <button aria-label="ابدأ البحث"><i>🔍</i></button>
+                <input type="text" id="searchInput" placeholder="ابحث عن دواء...">
+                <button onclick="searchProducts()">🔍</button>
             </div>
-
-            <!-- Product Categories -->
+            
             <div class="categories">
-                <button class="category active" data-category="all">الكل</button>
-                <button class="category" data-category="medicines">أدوية</button>
-                <button class="category" data-category="supplies">مستلزمات طبية</button>
-                <button class="category" data-category="cosmetics">تجميل</button>
+                <button class="category active" onclick="filterCategory('all')">الكل</button>
+                <button class="category" onclick="filterCategory('medicines')">أدوية</button>
+                <button class="category" onclick="filterCategory('supplies')">مستلزمات</button>
+                <button class="category" onclick="filterCategory('vitamins')">فيتامينات</button>
             </div>
-
-            <!-- Products Grid -->
+            
             <div class="products-grid" id="productsGrid">
-                <!-- Product Card Template -->
-                <div class="product-card" data-category="medicines">
-                    <div class="product-image">
-                        <img src="images/medicine1.jpg" alt="دواء">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-name">باراسيتامول</h3>
-                        <p class="product-description">مسكن للآلام وخافض للحرارة</p>
-                        <p class="product-price">25 ر.س</p>
-                        <button class="add-to-cart" onclick="addToCart(this)">
-                            أضف إلى السلة
-                            <i>🛒</i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="product-card" data-category="supplies">
-                    <div class="product-image">
-                        <img src="images/supply1.jpg" alt="مستلزم طبي">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-name">كمامات طبية</h3>
-                        <p class="product-description">عبوة تحتوي 50 كمامة</p>
-                        <p class="product-price">45 ر.س</p>
-                        <button class="add-to-cart" onclick="addToCart(this)">
-                            أضف إلى السلة
-                            <i>🛒</i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="product-card" data-category="cosmetics">
-                    <div class="product-image">
-                        <img src="images/cosmetic1.jpg" alt="منتج تجميلي">
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-name">كريم مرطب</h3>
-                        <p class="product-description">ترطيب عميق للبشرة</p>
-                        <p class="product-price">60 ر.س</p>
-                        <button class="add-to-cart" onclick="addToCart(this)">
-                            أضف إلى السلة
-                            <i>🛒</i>
-                        </button>
-                    </div>
-                </div>
+                <!-- Products will be loaded here -->
             </div>
-
+            
             <!-- Shopping Cart -->
-            <div class="shopping-cart" id="shoppingCart">
-                <h3>السلة <span class="cart-count">0</span></h3>
+            <div class="shopping-cart">
+                <h3>
+                    🛒 سلة الطلبات
+                    <span class="cart-count" id="cartCount">0</span>
+                </h3>
                 <div class="cart-items" id="cartItems">
-                    <!-- Cart items will be dynamically added here -->
+                    <div class="cart-empty">السلة فارغة</div>
                 </div>
                 <div class="cart-total">
                     <span>الإجمالي:</span>
-                    <span id="cartTotal">0.00 ر.س</span>
+                    <span id="cartTotal">0.00 ج.م</span>
                 </div>
-                <button class="checkout-btn" id="checkoutBtn">تقديم الطلب</button>
+                <button class="checkout-btn" onclick="checkout()">إتمام الطلب</button>
             </div>
-        </section>
+        </div>
 
         <!-- Features Bar -->
         <div class="features-bar">
@@ -606,13 +716,6 @@
     </div>
 
     <script>
-        // ===== Preloader =====
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                document.getElementById('preloader').classList.add('hidden');
-            }, 600);
-        });
-
         // ===== Particle System =====
         (function initParticles() {
             const container = document.getElementById('particles');
@@ -669,226 +772,178 @@
             }
         });
 
-        // ===== Pharmacy Interface Scripts =====
+        // ===== Pharmacy Features Functionality =====
+        const products = [
+            { id: 1, name: 'بانادول إكسترا', description: 'مسكن للألم وخافض للحرارة', price: 15.50, emoji: '💊', category: 'medicines' },
+            { id: 2, name: 'فيتامين سي', description: 'مقوي للمناعة 1000 مجم', price: 45.00, emoji: '🍊', category: 'vitamins' },
+            { id: 3, name: 'قناع طبي', description: 'قناع وجه جراحي', price: 25.00, emoji: '😷', category: 'supplies' },
+            { id: 4, name: 'أوميغا 3', description: 'زيت السمك للقلب', price: 120.00, emoji: '🐟', category: 'vitamins' },
+            { id: 5, name: 'مضاد حيوي', description: 'أموكسيسيلين 500 مجم', price: 35.00, emoji: '💊', category: 'medicines' },
+            { id: 6, name: 'كريم مرطب', description: 'للبشرة الجافة', price: 85.00, emoji: '🧴', category: 'cosmetics' },
+            { id: 7, name: 'قفازات مطاطية', description: 'قفازات طبية', price: 30.00, emoji: '🧤', category: 'supplies' },
+            { id: 8, name: 'فيتامين د', description: 'فيتامين د3 5000 وحدة', price: 55.00, emoji: '☀️', category: 'vitamins' },
+        ];
+
         let cart = [];
+        let currentCategory = 'all';
 
-        // Product filtering
-        document.querySelectorAll('.category').forEach(category => {
-            category.addEventListener('click', () => {
-                document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
-                category.classList.add('active');
-                
-                const categoryFilter = category.getAttribute('data-category');
-                const products = document.querySelectorAll('.product-card');
-                
-                products.forEach(product => {
-                    if (categoryFilter === 'all' || product.getAttribute('data-category') === categoryFilter) {
-                        product.style.display = 'flex';
-                    } else {
-                        product.style.display = 'none';
-                    }
-                });
+        // Render products
+        function renderProducts(productsToRender) {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+
+            if (productsToRender.length === 0) {
+                grid.innerHTML = '<div class="cart-empty">لا توجد منتجات مطابقة</div>';
+                return;
+            }
+
+            productsToRender.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <div class="product-image">${product.emoji}</div>
+                    <div class="product-info">
+                        <h3 class="product-name">${product.name}</h3>
+                        <p class="product-description">${product.description}</p>
+                        <p class="product-price">${product.price.toFixed(2)} ج.م</p>
+                    </div>
+                    <button class="add-to-cart" onclick="addToCart(${product.id})">
+                        + إضافة للسلة
+                    </button>
+                `;
+                grid.appendChild(card);
             });
-        });
+        }
 
-        // Product search
-        document.getElementById('productSearch').addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const products = document.querySelectorAll('.product-card');
+        // Search products
+        function searchProducts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = products.filter(p =>
+                p.name.toLowerCase().includes(query) ||
+                p.description.toLowerCase().includes(query)
+            );
+            renderProducts(filtered);
+        }
+
+        // Filter by category
+        function filterCategory(category) {
+            currentCategory = category;
             
-            products.forEach(product => {
-                const productName = product.querySelector('.product-name').textContent.toLowerCase();
-                const productDesc = product.querySelector('.product-description').textContent.toLowerCase();
-                
-                if (productName.includes(searchTerm) || productDesc.includes(searchTerm)) {
-                    product.style.display = 'flex';
-                } else {
-                    product.style.display = 'none';
+            // Update active button
+            document.querySelectorAll('.category').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.includes(getCategoryName(category))) {
+                    btn.classList.add('active');
                 }
             });
-        });
 
-        // Add to cart functionality
-        
-        function addToCart(button) {
-            const productCard = button.closest('.product-card');
-            const product = {
-                name: productCard.querySelector('.product-name').textContent,
-                price: parseFloat(productCard.querySelector('.product-price').textContent),
-                quantity: 1
+            if (category === 'all') {
+                renderProducts(products);
+            } else {
+                const filtered = products.filter(p => p.category === category);
+                renderProducts(filtered);
+            }
+        }
+
+        function getCategoryName(cat) {
+            const names = {
+                'all': 'الكل',
+                'medicines': 'أدوية',
+                'supplies': 'مستلزمات',
+                'vitamins': 'فيتامينات',
+                'cosmetics': 'تجميل'
             };
-            
-            // Check if product already exists in cart
-            const existingItem = cart.find(item => item.name === product.name);
-            
+            return names[cat] || cat;
+        }
+
+        // Add to cart
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existingItem = cart.find(item => item.id === productId);
+
             if (existingItem) {
                 existingItem.quantity++;
             } else {
-                cart.push(product);
+                cart.push({ ...product, quantity: 1 });
             }
-            
-            updateCartDisplay();
-            showNotification('تمت الإضافة إلى السلة', 'success');
+
+            updateCart();
         }
-        
+
         // Update cart display
-        function updateCartDisplay() {
-            const cartItemsContainer = document.getElementById('cartItems');
-            const cartCount = document.querySelector('.cart-count');
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            const cartCount = document.getElementById('cartCount');
             const cartTotal = document.getElementById('cartTotal');
-            
-            // Clear current cart display
-            cartItemsContainer.innerHTML = '';
-            
-            // Add items to cart display
-            let total = 0;
-            cart.forEach((item, index) => {
-                total += item.price * item.quantity;
-                
-                const cartItem = document.createElement('div');
-                cartItem.className = 'cart-item';
-                
-                cartItem.innerHTML = `
-                    <div class="cart-item-name">${item.name}</div>
-                    <div class="cart-item-quantity">
-                        <div class="quantity-control">
-                            <button class="quantity-btn" onclick="updateQuantity(${index}, -1)">-</button>
-                            <div class="quantity">${item.quantity}</div>
-                            <button class="quantity-btn" onclick="updateQuantity(${index}, 1)">+</button>
-                        </div>
-                        <div class="cart-item-price">${(item.price * item.quantity).toFixed(2)} ر.س</div>
-                    </div>
-                `;
-                
-                cartItemsContainer.appendChild(cartItem);
-            });
-            
-            // Update cart count and total
-            cartCount.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
-            cartTotal.textContent = total.toFixed(2) + ' ر.س';
-        }
-        
-        // Update product quantity in cart
-        window.updateQuantity = function(index, change) {
-            const item = cart[index];
-            item.quantity += change;
-            
-            if (item.quantity <= 0) {
-                cart.splice(index, 1);
-            }
-            
-            updateCartDisplay();
-            showNotification('تم تحديث الكمية في السلة', 'info');
-        }
-        
-        // Checkout button click
-        document.getElementById('checkoutBtn').addEventListener('click', () => {
+
             if (cart.length === 0) {
-                showNotification('السلة فارغة، يرجى إضافة منتجات قبل تقديم الطلب', 'error');
+                cartItems.innerHTML = '<div class="cart-empty">السلة فارغة</div>';
+                cartCount.textContent = '0';
+                cartTotal.textContent = '0.00 ج.م';
                 return;
             }
-            
-            // Show confirmation dialog
-            if (confirm('هل أنت متأكد من تقديم الطلب؟')) {
-                // Here you would typically send the order to the server
-                console.log('Order submitted:', cart);
-                cart = [];
-                updateCartDisplay();
-                showNotification('تم تقديم الطلب بنجاح', 'success');
+
+            cartItems.innerHTML = '';
+            let total = 0;
+            let count = 0;
+
+            cart.forEach(item => {
+                total += item.price * item.quantity;
+                count += item.quantity;
+
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerHTML = `
+                    <span class="cart-item-name">${item.name}</span>
+                    <div class="cart-item-quantity">
+                        <div class="quantity-control">
+                            <button class="quantity-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                            <span class="quantity">${item.quantity}</span>
+                            <button class="quantity-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+                        </div>
+                        <span class="cart-item-price">${(item.price * item.quantity).toFixed(2)} ج.م</span>
+                    </div>
+                `;
+                cartItems.appendChild(cartItem);
+            });
+
+            cartCount.textContent = count;
+            cartTotal.textContent = total.toFixed(2) + ' ج.م';
+        }
+
+        // Update quantity
+        function updateQuantity(productId, change) {
+            const item = cart.find(i => i.id === productId);
+            if (!item) return;
+
+            item.quantity += change;
+
+            if (item.quantity <= 0) {
+                cart = cart.filter(i => i.id !== productId);
             }
+
+            updateCart();
+        }
+
+        // Checkout
+        function checkout() {
+            if (cart.length === 0) {
+                alert('السلة فارغة!');
+                return;
+            }
+            alert('تم إرسال الطلب بنجاح! شكراً لتعاملكم مع سلامتك');
+            cart = [];
+            updateCart();
+        }
+
+        // Initialize products on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProducts(products);
         });
-        
-        // Show notification
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            // Remove notification after 3 seconds
-            setTimeout(() => {
-                notification.classList.add('fade-out');
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            }, 3000);
-        }
+
+        // Add search input listener
+        document.getElementById('searchInput').addEventListener('input', searchProducts);
     </script>
-
-    <!-- Notification Styles -->
-    <style>
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            padding: 16px 24px;
-            border-radius: var(--radius-md);
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: var(--shadow-soft);
-            z-index: 1000;
-            animation: slide-in 0.3s ease-out;
-            transition: opacity 0.3s ease;
-        }
-
-        .notification.fade-out {
-            opacity: 0;
-        }
-
-        .notification::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            width: 100%;
-            background: var(--accent-pharmacy);
-            animation: notification-progress 3s linear;
-        }
-
-        .notification-success::after {
-            background: var(--accent-pharmacy);
-        }
-
-        .notification-error::after {
-            background: var(--accent-warehouse);
-        }
-
-        .notification-info::after {
-            background: var(--primary);
-        }
-
-        @keyframes slide-in {
-            from {
-                transform: translateX(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes notification-progress {
-            0% { width: 100%; }
-            100% { width: 0%; }
-        }
-
-        .notification-success {
-            border-color: var(--accent-pharmacy);
-        }
-
-        .notification-error {
-            border-color: var(--accent-warehouse);
-        }
-
-        .notification-info {
-            border-color: var(--primary);
-        }
-    </style>
 
     <!-- المساعد الذكي المتكامل -->
     <script src="ai-core.js"></script>

@@ -1,10 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم</title>
     <script src="navigation.js"></script>
+    <script src="sidebar.js"></script>
     <style>
         body {
             margin: 0;
@@ -77,7 +78,6 @@
 </head>
 <body>
     <div class="header">
-        <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
         <h1 id="welcomeMsg">مرحباً</h1>
         <p>لوحة التحكم الخاصة بك</p>
     </div>
@@ -116,39 +116,122 @@
         </div>
     </div>
 
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // التحقق من تسجيل الدخول
-        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        
-        if (!currentUser) {
-            window.location.href = 'login.html';
-        } else {
-            // عرض معلومات المستخدم
-            document.getElementById('welcomeMsg').textContent = 'مرحباً ' + currentUser.warehouseName;
-            document.getElementById('warehouseName').textContent = currentUser.warehouseName;
-            document.getElementById('phone').textContent = currentUser.phone;
-            document.getElementById('governorate').textContent = currentUser.governorate;
-            document.getElementById('email').textContent = currentUser.email;
+        // ✅ تهيئة Supabase
+        window.SUPABASE_URL = 'https://iksjhjxwphmvthryfeae.supabase.co';
+        window.SUPABASE_KEY = 'sb_publishable_0DUy2mtXS6m5S8PwTDAANQ_XWlzbu0G';
+        window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+        // ✅ تحميل بيانات المخزن ديناميكياً من Supabase
+        async function loadWarehouseData() {
+            try {
+                // التحقق من الجلسة الحالية
+                const { data: { session } } = await window.supabaseClient.auth.getSession();
+                
+                if (!session) {
+                    console.log('⚠️ لا يوجد جلسة، التحقق من localStorage...');
+                    const localUser = localStorage.getItem('slamtak-user-id');
+                    if (!localUser) {
+                        if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
+                        return;
+                    }
+                }
+
+                console.log('🔍 جاري تحميل بيانات المخزن...');
+                
+                // ✅ جلب بيانات المخزن المرتبط بالمستخدم الحالي (RLS يضمن العزل)
+                const { data: warehouse, error } = await window.supabaseClient
+                    .from('warehouses')
+                    .select('*')
+                    .single();  // RLS guarantees only their warehouse is returned
+
+                if (error) {
+                    console.error('❌ خطأ في جلب البيانات:', error);
+                    // استخدام البيانات المحلية كاحتياط
+                    loadFromLocalStorage();
+                    return;
+                }
+
+                if (!warehouse) {
+                    console.warn('⚠️ لا يوجد مخزن مسجل لهذا المستخدم');
+                    loadFromLocalStorage();
+                    return;
+                }
+
+                console.log('✅ تم جلب بيانات المخزن:', warehouse.warehouse_name);
+
+                // ✅ عرض بيانات المخزن
+                document.getElementById('welcomeMsg').textContent = 'مرحباً ' + warehouse.warehouse_name;
+                document.getElementById('warehouseName').textContent = warehouse.warehouse_name;
+                document.getElementById('phone').textContent = warehouse.phone_number;
+                document.getElementById('governorate').textContent = warehouse.governorate;
+                document.getElementById('email').textContent = warehouse.email;
+                
+                const createdAt = new Date(warehouse.created_at);
+                document.getElementById('registeredAt').textContent = createdAt.toLocaleDateString('ar-EG');
+                document.getElementById('lastLogin').textContent = new Date().toLocaleString('ar-EG');
+                document.getElementById('status').textContent = 'نشط';
+
+                // ✅ حفظ في localStorage للاستخدام المحلي
+                const userData = {
+                    warehouseName: warehouse.warehouse_name,
+                    email: warehouse.email,
+                    phone: warehouse.phone_number,
+                    governorate: warehouse.governorate,
+                    userId: warehouse.user_id,
+                    warehouseId: warehouse.id,
+                    admin_key: warehouse.admin_key  // للتحقق من صلاحيات المدير
+                };
+                sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                localStorage.setItem('slamtak-warehouse-id', warehouse.id);
+
+            } catch (error) {
+                console.error('❌ خطأ:', error);
+                loadFromLocalStorage();
+            }
+        }
+
+        // ✅ تحميل من localStorage كاحتياط
+        function loadFromLocalStorage() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) {
+                if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
+                return;
+            }
+
+            document.getElementById('welcomeMsg').textContent = 'مرحباً ' + (currentUser.warehouseName || 'مستخدم');
+            document.getElementById('warehouseName').textContent = currentUser.warehouseName || '-';
+            document.getElementById('phone').textContent = currentUser.phone || '-';
+            document.getElementById('governorate').textContent = currentUser.governorate || '-';
+            document.getElementById('email').textContent = currentUser.email || '-';
             
             if (currentUser.registeredAt) {
                 const date = new Date(currentUser.registeredAt);
                 document.getElementById('registeredAt').textContent = date.toLocaleDateString('ar-EG');
             }
-            
-            if (currentUser.lastLogin) {
-                const lastLoginDate = new Date(currentUser.lastLogin);
-                document.getElementById('lastLogin').textContent = lastLoginDate.toLocaleString('ar-EG');
-            } else {
-                document.getElementById('lastLogin').textContent = 'أول تسجيل دخول';
-            }
-            
-            document.getElementById('status').textContent = currentUser.status === 'active' ? 'نشط' : 'غير نشط';
+            document.getElementById('lastLogin').textContent = new Date().toLocaleString('ar-EG');
+            document.getElementById('status').textContent = 'نشط';
         }
-        
-        function logout() {
-            sessionStorage.removeItem('currentUser');
+
+        // ✅ تسجيل الخروج (يحافظ على البيانات المحلية)
+        async function logout() {
+            // 1. إنهاء الجلسة الرسمية فقط
+            await window.supabaseClient.auth.signOut();
+
+            // 2. مسح بيانات الجلسة فقط (وليس المنتجات!)
+            sessionStorage.clear();
+
+            // ❌ لا نمسح localStorage حتى تبقى المنتجات!
+            // المنتجات (slamtak-products, slamtak-sync-queue) تُحفظ للمزامنة لاحقاً
+
+            // 3. تحويل لصفحة Login
             window.location.href = 'warehouse.html';
         }
+
+        // ✅ تحميل البيانات عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', loadWarehouseData);
     </script>
 </body>
 </html>

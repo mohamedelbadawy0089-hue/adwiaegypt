@@ -2,7 +2,7 @@ $files = @(
     "register.html",
     "products.html",
     "pharmacies.html",
-    "orders.html",
+    "analytics.html",
     "delivery.html",
     "add-product.html",
     "bulk-add.html",

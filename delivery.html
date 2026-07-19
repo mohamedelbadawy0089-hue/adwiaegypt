@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الدليفري</title>
+    <title>إدارة الدليفري - سلامتك</title>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-singleton.js"></script>
     <script src="navigation.js"></script>
     <style>
         body {
@@ -283,22 +286,119 @@
     </div>
 
     <script>
-        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        if (!currentUser) window.location.replace('login.html');
+        let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        let supabaseUserId = null;
         
-        let db;
         let allDelivery = [];
         
+        // Get Supabase client
+        function getSupabaseClient() {
+            return window.SupabaseSingleton ? window.SupabaseSingleton.getClient() : null;
+        }
+        
+        // Get authenticated user ID from Supabase
+        async function getSupabaseUserId() {
+            const supabase = getSupabaseClient();
+            if (!supabase) return null;
+            
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) {
+                    console.error('Error getting user:', error);
+                    return null;
+                }
+                supabaseUserId = user ? user.id : null;
+                return supabaseUserId;
+            } catch (e) {
+                console.error('Error:', e);
+                return null;
+            }
+        }
+        
+        // Get warehouse ID
+        function getCurrentUser() {
+            return JSON.parse(sessionStorage.getItem('currentUser'));
+        }
+        
+        // Check authentication on load - Hybrid Auth (Local First, No Forced Redirects)
+        async function checkAuth() {
+            // استخدام نظام الهجين - الأولوية للبيانات المحلية
+            if (window.HybridAuth) {
+                const auth = await window.HybridAuth.checkAuth({ 
+                    allowLocal: true, 
+                    silent: true, 
+                    background: false 
+                });
+                
+                if (auth.authenticated) {
+                    console.log('✅ Authenticated via Hybrid Auth:', auth.source);
+                    // تحديث المتغيرات المحلية
+                    if (auth.user) {
+                        currentUser = auth.user;
+                        supabaseUserId = auth.user.id;
+                    }
+                    return true;
+                }
+                
+                // ❌ لا يوجد جلسة - لكن لا نُوجّه إجبارياً!
+                // نسمح للمستخدم باستخدام البيانات المحلية القديمة
+                console.warn('⚠️ No valid session - Continuing in offline mode');
+                
+                // إذا كان هناك بيانات محلية قديمة، نستمر
+                if (currentUser) {
+                    console.log('🔄 Using cached local data');
+                    return true;
+                }
+                
+                // فقط إذا لم يكن هناك أي بيانات على الإطلاق
+                // نعرض رسالة ودية بدلاً من التوجيه الإجباري
+                console.log('ℹ️ No cached data - Showing login prompt');
+                // if(typeof window.showOfflineToast === 'function') window.showOfflineToast(); // ❌ ممنوع - لا توجيه إجباري
+                return false;
+            }
+            
+            // Fallback للنظام القديم إذا لم يكن HybridAuth متوفراً
+            const userId = await getSupabaseUserId();
+            if (!userId && !currentUser) {
+                // لا توجيه إجباري - نعرض رسالة فقط
+                console.warn('⚠️ No session available');
+                return false;
+            }
+            return true;
+        }
+        
         // عرض رقم موظف التحضير
-        function displayPreparationPhone() {
-            if (currentUser.preparationPhone) {
+        async function displayPreparationPhone() {
+            const phone = await loadPreparationPhone();
+            if (phone) {
                 document.getElementById('preparationDisplay').style.display = 'block';
                 document.getElementById('preparationForm').style.display = 'none';
-                document.getElementById('preparationPhoneText').textContent = currentUser.preparationPhone;
+                document.getElementById('preparationPhoneText').textContent = phone;
             } else {
                 document.getElementById('preparationDisplay').style.display = 'none';
                 document.getElementById('preparationForm').style.display = 'block';
             }
+        }
+        
+        // تحميل رقم موظف التحضير من Supabase
+        async function loadPreparationPhone() {
+            const supabase = getSupabaseClient();
+            if (!supabase) return null;
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return null;
+            
+            const { data, error } = await supabase
+                .from('preparation_phone')
+                .select('phone')
+                .eq('user_id', user.id)
+                .single();
+            
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error loading preparation phone:', error);
+            }
+            
+            return data ? data.phone : null;
         }
         
         function validatePreparationPhone() {
@@ -320,7 +420,7 @@
             }
         }
         
-        function savePreparationPhone() {
+        async function savePreparationPhone() {
             const phone = document.getElementById('preparationPhone').value.trim();
             
             if (phone.length !== 11) {
@@ -328,108 +428,91 @@
                 return;
             }
             
-            currentUser.preparationPhone = phone;
-            
-            // حفظ في localStorage
-            const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-            const userIndex = users.findIndex(u => u.email === currentUser.email);
-            if (userIndex !== -1) {
-                users[userIndex].preparationPhone = phone;
-                localStorage.setItem('registeredUsers', JSON.stringify(users));
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                alert('❌ لا يمكن الاتصال بـ Supabase');
+                return;
             }
             
-            // حفظ في IndexedDB
-            const request = indexedDB.open('WarehouseDB', 1);
-            request.onsuccess = function() {
-                const db = request.result;
-                if (db.objectStoreNames.contains('users')) {
-                    const tx = db.transaction(['users'], 'readwrite');
-                    const store = tx.objectStore('users');
-                    const getReq = store.getAll();
-                    getReq.onsuccess = function() {
-                        const allUsers = getReq.result;
-                        const user = allUsers.find(u => u.email === currentUser.email);
-                        if (user) {
-                            user.preparationPhone = phone;
-                            store.put(user);
-                        }
-                    };
-                }
-            };
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                alert('يجب تسجيل الدخول أولاً');
+                return;
+            }
             
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            // التحقق إذا كان يوجد رقم سابق
+            const { data: existingData } = await supabase
+                .from('preparation_phone')
+                .select('id')
+                .eq('user_id', user.id)
+                .single();
+            
+            let error;
+            if (existingData) {
+                // تحديث الرقم الموجود
+                const { error: updateError } = await supabase
+                    .from('preparation_phone')
+                    .update({ phone: phone, updated_at: new Date().toISOString() })
+                    .eq('user_id', user.id);
+                error = updateError;
+            } else {
+                // إضافة رقم جديد
+                const { error: insertError } = await supabase
+                    .from('preparation_phone')
+                    .insert([{
+                        user_id: user.id,
+                        phone: phone
+                    }]);
+                error = insertError;
+            }
+            
+            if (error) {
+                console.error('Error saving preparation phone:', error);
+                alert('❌ حدث خطأ أثناء الحفظ: ' + error.message);
+                return;
+            }
             
             alert('✅ تم حفظ رقم موظف التحضير بنجاح!');
             document.getElementById('preparationPhone').value = '';
-            displayPreparationPhone();
+            await displayPreparationPhone();
         }
         
-        function editPreparationPhone() {
-            document.getElementById('preparationPhone').value = currentUser.preparationPhone || '';
+        async function editPreparationPhone() {
+            const phone = await loadPreparationPhone();
+            document.getElementById('preparationPhone').value = phone || '';
             document.getElementById('preparationDisplay').style.display = 'none';
             document.getElementById('preparationForm').style.display = 'block';
             validatePreparationPhone();
         }
         
-        function deletePreparationPhone() {
+        async function deletePreparationPhone() {
             if (!confirm('هل أنت متأكد من حذف رقم موظف التحضير؟')) return;
             
-            currentUser.preparationPhone = null;
-            
-            // حذف من localStorage
-            const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-            const userIndex = users.findIndex(u => u.email === currentUser.email);
-            if (userIndex !== -1) {
-                delete users[userIndex].preparationPhone;
-                localStorage.setItem('registeredUsers', JSON.stringify(users));
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                alert('❌ لا يمكن الاتصال بـ Supabase');
+                return;
             }
             
-            // حذف من IndexedDB
-            const request = indexedDB.open('WarehouseDB', 1);
-            request.onsuccess = function() {
-                const db = request.result;
-                if (db.objectStoreNames.contains('users')) {
-                    const tx = db.transaction(['users'], 'readwrite');
-                    const store = tx.objectStore('users');
-                    const getReq = store.getAll();
-                    getReq.onsuccess = function() {
-                        const allUsers = getReq.result;
-                        const user = allUsers.find(u => u.email === currentUser.email);
-                        if (user) {
-                            delete user.preparationPhone;
-                            store.put(user);
-                        }
-                    };
-                }
-            };
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                alert('يجب تسجيل الدخول أولاً');
+                return;
+            }
             
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            const { error } = await supabase
+                .from('preparation_phone')
+                .delete()
+                .eq('user_id', user.id);
+            
+            if (error) {
+                console.error('Error deleting preparation phone:', error);
+                alert('❌ حدث خطأ أثناء الحذف: ' + error.message);
+                return;
+            }
             
             alert('تم حذف رقم موظف التحضير بنجاح!');
-            displayPreparationPhone();
-        }
-        
-        function initDB() {
-            const request = indexedDB.open('WarehouseDB', 5);
-            
-            request.onupgradeneeded = function(e) {
-                db = e.target.result;
-                
-                if (!db.objectStoreNames.contains('delivery')) {
-                    const objectStore = db.createObjectStore('delivery', { keyPath: 'id', autoIncrement: true });
-                    objectStore.createIndex('userId', 'userId', { unique: false });
-                    objectStore.createIndex('phone', 'phone', { unique: false });
-                }
-            };
-            
-            request.onsuccess = function() {
-                db = request.result;
-                loadDelivery();
-            };
-            
-            request.onerror = function() {
-                loadDeliveryFromLocalStorage();
-            };
+            await displayPreparationPhone();
         }
         
         function validatePhone() {
@@ -460,48 +543,66 @@
             }
         }
         
-        function handleSubmit(event) {
+        async function handleSubmit(event) {
             event.preventDefault();
             
+            // ✅ جلب البيانات من الفورم فقط (لا يوجد حقل user_id في الفورم)
             const name = document.getElementById('deliveryName').value.trim();
             const phone = document.getElementById('deliveryPhone').value;
             
+            // ✅ التحقق من البيانات المدخلة
             if (!name || phone.length !== 11) {
                 alert('يرجى إدخال جميع البيانات بشكل صحيح');
                 return;
             }
             
-            const deliveryData = {
-                userId: currentUser.email,
-                warehouseName: currentUser.warehouseName,
-                name: name,
-                phone: phone,
-                createdAt: new Date().toISOString()
-            };
-            
-            if (!db) {
-                const delivery = JSON.parse(localStorage.getItem('delivery')) || [];
-                delivery.push(deliveryData);
-                localStorage.setItem('delivery', JSON.stringify(delivery));
-                alert('تم إضافة رجل الدليفري بنجاح');
-                resetForm();
-                loadDeliveryFromLocalStorage();
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                alert('❌ لا يمكن الاتصال بـ Supabase. تأكد من تسجيل الدخول.');
                 return;
             }
             
-            const transaction = db.transaction(['delivery'], 'readwrite');
-            const objectStore = transaction.objectStore('delivery');
-            const request = objectStore.add(deliveryData);
+            // ✅ سحب user_id و warehouse_id مباشرة من Supabase Auth Session
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !session || !session.user) {
+                alert('يجب تسجيل الدخول أولاً');
+                if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
+                return;
+            }
             
-            request.onsuccess = function() {
-                alert('تم إضافة رجل الدليفري بنجاح');
-                resetForm();
-                loadDelivery();
+            const user = session.user;
+            // نستخرج الـ warehouse_id مباشرة من الجلسة (في هذا النظام معرف المستخدم هو معرف المخزن للمدير)
+            const warehouseId = user.id;
+
+            // ✅ بناء البيانات للإرسال - user_id من Auth فقط
+            // سياسة RLS: WITH CHECK (auth.uid() = user_id)
+            const deliveryData = {
+                user_id: user.id,  // 🔒 آمن: مسحوب تلقائياً
+                warehouse_id: warehouseId,
+                name: name,
+                phone: phone,
+                created_at: new Date().toISOString()
             };
             
-            request.onerror = function() {
-                alert('حدث خطأ أثناء الإضافة');
-            };
+            // ✅ تنفيذ INSERT مع التحقق من RLS
+            const { data, error } = await supabase
+                .from('delivery')
+                .insert([deliveryData])
+                .select();
+            
+            if (error) {
+                console.error('Error adding delivery:', error);
+                if (error.code === '42501') {
+                    alert('❌ خطأ في السياسة: لا يمكن إضافة البيانات. تأكد من تسجيل الدخول.');
+                } else {
+                    alert('❌ حدث خطأ أثناء الإضافة: ' + error.message);
+                }
+                return;
+            }
+            
+            alert('✅ تم إضافة رجل الدليفري بنجاح!');
+            resetForm();
+            loadDeliveryFromSupabase();
         }
         
         function resetForm() {
@@ -512,98 +613,200 @@
             document.getElementById('deliveryPhone').classList.remove('error');
         }
         
-        function loadDelivery() {
-            if (!db) {
-                loadDeliveryFromLocalStorage();
+        async function loadDeliveryFromSupabase() {
+            const supabase = getSupabaseClient();
+            if (!supabase) {
+                console.error('❌ Supabase client not available');
                 return;
             }
             
-            const transaction = db.transaction(['delivery'], 'readonly');
-            const objectStore = transaction.objectStore('delivery');
-            const index = objectStore.index('userId');
-            const request = index.getAll(currentUser.email);
-            
-            request.onsuccess = function() {
-                allDelivery = request.result || [];
-                displayDelivery(allDelivery);
-            };
-            
-            request.onerror = function() {
-                loadDeliveryFromLocalStorage();
-            };
-        }
-        
-        function loadDeliveryFromLocalStorage() {
-            const delivery = JSON.parse(localStorage.getItem('delivery')) || [];
-            allDelivery = delivery.filter(d => d.userId === currentUser.email);
-            displayDelivery(allDelivery);
-        }
-        
-        function displayDelivery(delivery) {
-            document.getElementById('deliveryCount').textContent = delivery.length;
-            
-            if (delivery.length === 0) {
-                document.getElementById('deliveryTable').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
-                return;
+            try {
+                // ✅ التحقق من الجلسة باستخدام HybridAuth (Local First)
+                const auth = await window.HybridAuth.checkAuth({ silent: true });
+                
+                if (!auth.authenticated) {
+                    console.warn('⚠️ Not authenticated - Continuing with empty data');
+                    const tbody = document.getElementById('deliveryBody');
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⚠️ يرجى تسجيل الدخول لعرض البيانات</td></tr>';
+                    return;
+                }
+                
+                // ✅ استخدام HybridAPI للاستعلام مع Try-Catch
+                const { data, error, fromFallback } = await window.HybridAPI.call(async () => {
+                    return await supabase
+                        .from('delivery')
+                        .select('id, name, phone, created_at')
+                        .order('created_at', { ascending: false });
+                }, []); // البيانات الاحتياطية: مصفوفة فارغة
+                
+                if (error) {
+                    console.error('Error loading delivery:', error);
+                    
+                    // ❌ لا توجيه إجباري - نعرض رسالة فقط
+                    if (error.message?.includes('Auth session missing') || 
+                        error.message?.includes('AuthSessionMissingError')) {
+                        console.warn('⚠️ Session expired, using local fallback');
+                    } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+                        console.warn('⚠️ Network error, using local fallback');
+                    } else {
+                        alert('❌ حدث خطأ أثناء تحميل البيانات: ' + error.message);
+                    }
+                    
+                    // استمر في عرض البيانات المحلية إن وجدت
+                    return;
+                }
+                
+                const tbody = document.getElementById('deliveryBody');
+                tbody.innerHTML = '';
+                
+                // ✅ استخدام data وليس delivery (إصلاح ReferenceError)
+                if (data && data.length > 0) {
+                    document.getElementById('deliveryCount').textContent = data.length; // تحديث العداد
+                    document.getElementById('deliveryTable').style.display = 'table';
+                    document.getElementById('emptyState').style.display = 'none';
+                    
+                    data.forEach((person, index) => {
+                        const date = new Date(person.created_at || person.createdAt).toLocaleDateString('ar-EG');
+                        const id = person.id || index;
+                        const row = `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><strong>${person.name}</strong></td>
+                                <td>${person.phone}</td>
+                                <td>${date}</td>
+                                <td><button class="btn-delete" onclick="deleteDelivery('${id}')">حذف</button></td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                    
+                    if (fromFallback) {
+                        console.log('📦 Data loaded from local fallback');
+                    }
+                } else {
+                    document.getElementById('deliveryCount').textContent = '0'; // تحديث العداد
+                    document.getElementById('deliveryTable').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا يوجد رجال دليفري</td></tr>';
+                }
+                
+            } catch (err) {
+                console.error('❌ Unexpected error in loadDeliveryFromSupabase:', err);
+                // ❌ لا توجيه إجباري - نستمر في عرض الواجهة
+                const tbody = document.getElementById('deliveryBody');
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">⚠️ خطأ في تحميل البيانات</td></tr>';
             }
-            
-            document.getElementById('deliveryTable').style.display = 'table';
-            document.getElementById('emptyState').style.display = 'none';
-            
-            const tbody = document.getElementById('deliveryBody');
-            tbody.innerHTML = '';
-            
-            delivery.forEach((person, index) => {
-                const date = new Date(person.createdAt).toLocaleDateString('ar-EG');
-                const row = `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td><strong>${person.name}</strong></td>
-                        <td>${person.phone}</td>
-                        <td>${date}</td>
-                        <td><button class="btn-delete" onclick="deleteDelivery(${person.id || index})">حذف</button></td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
         }
         
-        function deleteDelivery(id) {
+        async function deleteDelivery(id) {
             if (!confirm('هل أنت متأكد من حذف رجل الدليفري؟')) return;
             
-            if (!db) {
-                const delivery = JSON.parse(localStorage.getItem('delivery')) || [];
-                delivery.splice(id, 1);
-                localStorage.setItem('delivery', JSON.stringify(delivery));
-                loadDeliveryFromLocalStorage();
-                return;
+            const supabase = getSupabaseClient();
+            if (supabase && id) {
+                // ✅ تحديث فوري للواجهة قبل الرد من السيرفر (Optimistic UI)
+                const row = document.querySelector(`button[onclick="deleteDelivery('${id}')"]`)?.closest('tr');
+                if (row) {
+                    row.style.opacity = '0.5';
+                    row.style.backgroundColor = '#ffebee';
+                }
+                
+                // RLS policy ensures user can only delete their own delivery
+                // السيرفر يرفض تلقائياً إذا لم يكن السجل تابعاً لنفس user_id
+                const { error } = await supabase
+                    .from('delivery')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) {
+                    console.error('Error deleting delivery:', error);
+                    // إعادة الصف لوضعه الطبيعي
+                    if (row) {
+                        row.style.opacity = '1';
+                        row.style.backgroundColor = '';
+                    }
+                    // ✅ معالجة أخطاء RLS - السيرفر يرفض العملية
+                    if (error.code === '42501') {
+                        alert('❌ لا يمكنك حذف هذا السجل!\n\nهذا السجل لا يخص مخزنك أو لا تمتلك صلاحية الحذف.\n\n(تم رفض العملية بواسطة سياسة الأمان RLS)');
+                    } else if (error.message.includes('policy') || error.message.includes('row-level')) {
+                        alert('❌ خطأ في سياسة الأمان!\n\nليس لديك صلاحية حذف هذا السجل.');
+                    } else {
+                        alert('❌ حدث خطأ أثناء الحذف: ' + error.message);
+                    }
+                    return;
+                }
+                
+                // ✅ تحديث فوري للواجهة بعد نجاح الحذف
+                if (row) {
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.transform = 'translateX(100%)';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        loadDeliveryFromSupabase();
+                    }, 300);
+                } else {
+                    await loadDeliveryFromSupabase();
+                }
+            } else {
+                alert('❌ لا يمكن الاتصال بـ Supabase');
+            }
+        }
+        
+        // ✅ اشتراك Real-time لتحديث الجدول تلقائياً
+        let realtimeChannel = null;
+        
+        function subscribeToDeliveryChanges() {
+            const supabase = getSupabaseClient();
+            if (!supabase) return;
+            
+            // إلغاء الاشتراك القديم إذا وجد
+            if (realtimeChannel) {
+                supabase.removeChannel(realtimeChannel);
             }
             
-            const transaction = db.transaction(['delivery'], 'readwrite');
-            const objectStore = transaction.objectStore('delivery');
-            const request = objectStore.delete(id);
-            
-            request.onsuccess = function() {
-                loadDelivery();
-            };
+            // إنشاء اشتراك جديد للتغييرات
+            realtimeChannel = supabase
+                .channel('delivery-changes')
+                .on('postgres_changes', 
+                    { 
+                        event: '*', 
+                        schema: 'public', 
+                        table: 'delivery' 
+                    }, 
+                    (payload) => {
+                        console.log('Real-time change received:', payload);
+                        // ✅ إعادة تحميل البيانات فوراً عند أي تغيير
+                        loadDeliveryFromSupabase();
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('Real-time subscription status:', status);
+                });
         }
         
         function goBack() {
-            if (currentUser.userType === 'admin') {
+            if (currentUser && currentUser.userType === 'admin') {
                 window.location.replace('admin-dashboard.html');
             } else {
                 window.location.replace('menu.html');
             }
         }
         
-        initDB();
-        displayPreparationPhone();
+        // Load delivery data on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAuth = await checkAuth();
+            if (isAuth) {
+                await loadDeliveryFromSupabase();
+                await displayPreparationPhone();
+                // ✅ تفعيل الاشتراك Real-time لتحديث تلقائي
+                subscribeToDeliveryChanges();
+            }
+        });
     </script>
+    <script src="supabase-singleton.js"></script>
+    <script src="auth-hybrid.js"></script>
     <script src="ai-core.js"></script>
     <script src="ai-validation.js"></script>
     <script src="ai-speech.js"></script>
-    <script src="ai-database.js"></script>
     <script src="ai-ui.js"></script>
     <script src="ai-assistant.js"></script>
 </body>

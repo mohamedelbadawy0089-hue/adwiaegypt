@@ -106,6 +106,29 @@
             </div>
         </div>
 
+        <!-- بيانات المورد (بيانات عامة للفاتورة) -->
+        <div style="background: #fff9db; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #fab005;">
+            <h3 style="color: #f08c00; margin-bottom: 10px;"><i class="fas fa-file-invoice"></i> بيانات المورد والفاتورة (تطبق على الكل)</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label style="display: block; font-size: 13px; color: #666;">اسم المورد</label>
+                    <input type="text" id="globalSupplierName" placeholder="مثال: شركة المتحدة" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; color: #666;">تليفون المورد</label>
+                    <input type="text" id="globalSupplierPhone" placeholder="01xxxxxxxxx" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; color: #666;">عنوان المورد</label>
+                    <input type="text" id="globalSupplierAddress" placeholder="المحافظة / المدينة" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; color: #666;">رقم الفاتورة</label>
+                    <input type="text" id="globalInvoiceNumber" placeholder="رقم الفاتورة" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
+
         <!-- منطقة استيراد الملفات -->
         <div style="background: #e8f5e8; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px dashed #28a745;">
             <h3 style="color: #28a745; margin-bottom: 10px;">📁 استيراد من ملف</h3>
@@ -541,7 +564,101 @@
             setTimeout(addNextImportedProduct, 1000);
         }
 
-        // تحليل سطر المنتج
+        // وظيفة لصق ومعالجة البيانات
+        function pasteAndProcessData() {
+            const pasteArea = document.getElementById('pasteData');
+            const rawData = pasteArea.value.trim();
+            
+            if (!rawData) {
+                alert('⚠️ يرجى لصق البيانات أولاً');
+                return;
+            }
+
+            const lines = rawData.split('\n').filter(line => line.trim());
+            const products = [];
+
+            lines.forEach(line => {
+                // استخدام المحرك الذكي إذا كان متاحاً، وإلا نستخدم المحلل البسيط
+                let productData = null;
+                if (window.AICore && typeof window.AICore.smartParsePaste === 'function') {
+                    const smart = window.AICore.smartParsePaste(line);
+                    if (smart && smart.productName) {
+                        // تحويل الصيغة لتناسب الجدول
+                        productData = {
+                            name: smart.productName,
+                            price: smart.price || 0,
+                            quantity: smart.quantity || 1,
+                            discount: smart.discount || 0,
+                            barcode: smart.barcode || '',
+                            expMonth: '',
+                            expYear: ''
+                        };
+                        
+                        // محاولة استخراج الشهر والسنة من التاريخ الذكي
+                        if (smart.expiryDate) {
+                            const dateParts = smart.expiryDate.split(/[\/\-]/);
+                            if (dateParts.length >= 2) {
+                                productData.expMonth = parseInt(dateParts[0]);
+                                productData.expYear = dateParts[1].length === 2 ? '20' + dateParts[1] : dateParts[1];
+                            }
+                        }
+                    }
+                }
+
+                if (!productData) {
+                    productData = parseProductLine(line);
+                }
+
+                if (productData) {
+                    products.push(productData);
+                }
+            });
+
+            if (products.length > 0) {
+                // مسح الجدول الحالي أو الإضافة عليه؟ المستخدم طلب إدخال جماعي، سنضيفهم
+                products.forEach(p => {
+                    addNewRow();
+                    const row = rowCount;
+                    document.getElementById(`productName_${row}`).value = p.name;
+                    document.getElementById(`price_${row}`).value = p.price;
+                    document.getElementById(`quantity_${row}`).value = p.quantity;
+                    document.getElementById(`discount_${row}`).value = p.discount;
+                    document.getElementById(`barcode_${row}`).value = p.barcode;
+                    if (p.expMonth) document.getElementById(`expiryMonth_${row}`).value = p.expMonth;
+                    if (p.expYear) document.getElementById(`expiryYear_${row}`).value = p.expYear;
+                });
+
+                if (window.AIUI) {
+                    window.AIUI.addMessage(`✅ تم استخراج ${products.length} منتج بنجاح باستخدام اللصق الذكي`, 'bot', true);
+                }
+                pasteArea.value = ''; // مسح المربع بعد النجاح
+            } else {
+                alert('❌ لم أتمكن من فهم البيانات الملحقة. يرجى التأكد من التنسيق.');
+            }
+        }
+
+        function clearPasteArea() {
+            document.getElementById('pasteData').value = '';
+        }
+
+        function copyTableData() {
+            const tbody = document.getElementById('tableBody');
+            const rows = tbody.querySelectorAll('tr');
+            let text = "المنتج\tالسعر\tالكمية\tالخصم\tالباركود\tالتاريخ\n";
+            
+            rows.forEach((row, i) => {
+                const n = row.querySelector(`#productName_${i+1}`)?.value || '';
+                const p = row.querySelector(`#price_${i+1}`)?.value || '';
+                const q = row.querySelector(`#quantity_${i+1}`)?.value || '';
+                if (n) text += `${n}\t${p}\t${q}\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ تم نسخ بيانات الجدول إلى الحافظة');
+            });
+        }
+
+        // تحليل سطر المنتج (المحلل القديم كاحتياطي)
         function parseProductLine(line) {
             // محاولة تقسيم السطر بفواصل مختلفة
             let parts = [];
@@ -639,10 +756,11 @@
                 }
             }
 
-            // جمع البيانات من الجدول
-            const products = [];
-            const tbody = document.getElementById('tableBody');
-            const rows = tbody.querySelectorAll('tr');
+            // بيانات المورد العامة
+            const gSupName = document.getElementById('globalSupplierName').value;
+            const gSupPhone = document.getElementById('globalSupplierPhone').value;
+            const gSupAddress = document.getElementById('globalSupplierAddress').value;
+            const gInvoice = document.getElementById('globalInvoiceNumber').value;
 
             rows.forEach((row, index) => {
                 const productName = row.querySelector(`#productName_${index + 1}`)?.value;
@@ -655,15 +773,18 @@
 
                 if (productName && price) {
                     products.push({
-                        name: productName,
+                        name_en: productName, // Changed to name_en to match schema
                         price: parseFloat(price) || 0,
                         quantity: parseInt(quantity) || 0,
                         discount: parseFloat(discount) || 0,
-                        barcode: barcode || null,
-                        expiry_month: parseInt(expMonth) || null,
-                        expiry_year: parseInt(expYear) || null,
-                        category: 'أدوية',
-                        user_id: 'current_user' // يمكن تعديله لاحقاً
+                        batch_number: barcode || null,
+                        expiry_date: (expYear && expMonth) ? `${expYear}-${expMonth}-01` : null,
+                        supplier_name: gSupName || null,
+                        supplier_phone: gSupPhone || null,
+                        supplier_address: gSupAddress || null,
+                        invoice_number: gInvoice || null,
+                        warehouse_id: warehouseId,
+                        category: 'أدوية'
                     });
                 }
             });
@@ -680,9 +801,12 @@
 
             try {
                 // حفظ المنتجات في قاعدة البيانات
-                await window.SupabaseManager.saveProducts(products);
-                
-                // مسح الجدول بعد الحفظ الناجح
+                // استخدام جدول warehouse_custom_products لأن المنتجات في هذا الجدول يدوية غالباً
+                const { error } = await window.SupabaseManager.supabase
+                    .from('warehouse_custom_products')
+                    .insert(products);
+
+                if (error) throw error;
                 if (confirm('تم حفظ البيانات بنجاح! هل تريد مسح الجدول؟')) {
                     tbody.innerHTML = '';
                     rowCount = 0;

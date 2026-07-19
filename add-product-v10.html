@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif; direction: rtl;">
                     <h2 style="color: #dc3545;">❌ غير مصرح بالدخول</h2>
                     <p style="color: #6c757d;">يجب تسجيل الدخول أولاً للوصول إلى هذه الصفحة</p>
-                    <button onclick="window.location.href='login.html'" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px;">
+                    <button onclick="if(typeof window.showOfflineToast === 'function') window.showOfflineToast();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px;">
                         تسجيل الدخول
                     </button>
                     <button onclick="window.location.reload()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px;">

@@ -207,6 +207,7 @@
                     errorDiv.textContent = result.error;
                     errorDiv.style.display = 'block';
                 }
+                // handlePostLogin سيقوم بالتحويل تلقائياً
                 
                 return;
             }
@@ -237,15 +238,34 @@
             // نجاح تسجيل الدخول - حفظ في localStorage
             console.log('✅ تسجيل الدخول ناجح (localStorage):', user.email);
             
-            localStorage.setItem('currentUser', JSON.stringify({
-                id: user.id || 'local_' + Date.now(),
-                email: user.email,
-                phone: user.phone,
-                warehouseId: user.warehouseId || user.id || 'local_' + Date.now()
-            }));
-            
-            localStorage.setItem('localAuth', 'true');
-            
+            // حفظ في المفاتيح الصحيحة لاستخدامها في جميع الصفحات
+            const userId = user.id || 'local_' + Date.now();
+            localStorage.setItem('slamtak-user-email', user.email);
+            localStorage.setItem('slamtak-user-id', userId);
+            localStorage.setItem('slamtak-auth-status', 'authenticated');
+            // حفظ current_warehouse_id للاستخدام في وضع offline
+            localStorage.setItem('current_warehouse_id', userId);
+            localStorage.setItem('slamtak-warehouse-id', userId);
+
+            console.log('✅ تم حفظ بيانات المستخدم في localStorage (loginFromLocalStorage)');
+            console.log('🏭 current_warehouse_id set:', userId.substring(0, 8) + '...');
+
+            // التحقق من الحفظ
+            const savedEmail = localStorage.getItem('slamtak-user-email');
+            const savedId = localStorage.getItem('slamtak-user-id');
+            const savedAuthStatus = localStorage.getItem('slamtak-auth-status');
+            const savedWarehouseId = localStorage.getItem('current_warehouse_id');
+
+            console.log('✅ التحقق من الحفظ (loginFromLocalStorage):');
+            console.log('  📧 Email:', savedEmail);
+            console.log('  🆔 ID:', savedId);
+            console.log('  🔐 Auth Status:', savedAuthStatus);
+            console.log('  🏭 Warehouse ID:', savedWarehouseId ? savedWarehouseId.substring(0, 8) + '...' : 'null');
+
+            // Debug alert
+            alert('✅ تم التسجيل بنجاح!\nEmail: ' + savedEmail + '\nID: ' + savedId + '\nWarehouse: ' + (savedWarehouseId ? savedWarehouseId.substring(0, 8) + '...' : 'null'));
+
+            // توجيه مباشر لصفحة إضافة المنتج
             window.location.replace('add-product.html');
         }
         
@@ -316,11 +336,12 @@
         async function signInWithSupabase(email, password) {
             try {
                 // التحقق من وجود Supabase Client
-                if (!window.supabase) {
+                const client = SupabaseSingleton.getClient();
+                if (!client) {
                     return { success: false, error: '❌ خطأ في الإعدادات: Supabase Client غير موجود' };
                 }
                 
-                const { data, error } = await window.supabase.auth.signInWithPassword({
+                const { data, error } = await client.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
@@ -345,22 +366,38 @@
                 if (data.user && data.session) {
                     console.log('✅ تم تسجيل الدخول بنجاح:', data.user.email);
                     
-                    // حفظ الجلسة في localStorage
-                    localStorage.setItem('supabase.auth.token', JSON.stringify({
-                        access_token: data.session.access_token,
-                        refresh_token: data.session.refresh_token,
-                        expires_at: data.session.expires_at,
-                        user_id: data.user.id,
-                        email: data.user.email
-                    }));
+                    // حفظ بيانات المستخدم في localStorage كمرجع نهائي
+                    localStorage.setItem('slamtak-user-email', data.user.email);
+                    localStorage.setItem('slamtak-user-id', data.user.id);
+                    localStorage.setItem('slamtak-auth-status', 'authenticated');
+                    // حفظ current_warehouse_id للاستخدام في وضع offline
+                    localStorage.setItem('current_warehouse_id', data.user.id);
+                    localStorage.setItem('slamtak-warehouse-id', data.user.id);
+
+                    console.log('✅ تم حفظ بيانات المستخدم في localStorage');
+                    console.log('🏭 current_warehouse_id set:', data.user.id.substring(0, 8) + '...');
                     
-                    // حفظ معلومات المستخدم
-                    localStorage.setItem('currentUser', JSON.stringify({
-                        id: data.user.id,
-                        email: data.user.email
-                    }));
+                    // انتظار للتأكد من حفظ البيانات
+                    await new Promise(r => setTimeout(r, 200));
                     
-                    console.log('💾 تم حفظ الجلسة في localStorage');
+                    // التحقق من الحفظ
+                    const savedEmail = localStorage.getItem('slamtak-user-email');
+                    const savedId = localStorage.getItem('slamtak-user-id');
+                    const savedAuthStatus = localStorage.getItem('slamtak-auth-status');
+                    
+                    console.log('✅ التحقق من الحفظ:');
+                    console.log('  📧 Email:', savedEmail);
+                    console.log('  🆔 ID:', savedId);
+                    console.log('  🔐 Auth Status:', savedAuthStatus);
+                    
+                    // Debug alert
+                    alert('✅ تم الحفظ:\nEmail: ' + savedEmail + '\nID: ' + savedId);
+                    
+                    if (!savedEmail || !savedId) {
+                        console.error('❌ البيانات لم تُحفظ بشكل صحيح!');
+                        alert('❌ خطأ: البيانات لم تُحفظ في localStorage');
+                        return { success: false, error: '❌ خطأ: البيانات لم تُحفظ' };
+                    }
                     
                     // جلب المخازن والتحقق منها
                     await handlePostLogin(data.user.id);
@@ -387,7 +424,14 @@
         async function handlePostLogin(userId) {
             try {
                 // جلب مخازن المستخدم
-                const { data: warehouses, error } = await window.supabase
+                const client = SupabaseSingleton.getClient();
+                if (!client) {
+                    console.error('❌ خطأ: Supabase Client غير موجود');
+                    window.location.replace('add-product.html');
+                    return;
+                }
+                
+                const { data: warehouses, error } = await client
                     .from('warehouses')
                     .select('*')
                     .eq('user_id', userId)
@@ -431,13 +475,6 @@
             }
         }
         
-        // إظهار واجهة اختيار المخزن
-        function showWarehouseSelector(warehouses) {
-            // إنشاء عنصر الـ Modal إذا لم يكن موجوداً
-            let modal = document.getElementById('warehouseSelectorModal');
-            if (!modal) {
-                modal = document.createElement('div');
-        
         // إظهار واجهة اختيار المخزن - معطلة
         function showWarehouseSelector(warehouses) {
             // تم حذف هذه الميزة
@@ -475,52 +512,41 @@
             // نجاح تسجيل الدخول - حفظ في localStorage
             console.log('✅ تسجيل الدخول ناجح (localStorage):', user.email);
             
+            // حفظ في المفاتيح الصحيحة لاستخدامها في جميع الصفحات
+            const userId = user.id || 'local_' + Date.now();
+            localStorage.setItem('slamtak-user-email', user.email);
+            localStorage.setItem('slamtak-user-id', userId);
+            localStorage.setItem('slamtak-auth-status', 'authenticated');
+            // حفظ current_warehouse_id للاستخدام في وضع offline
+            localStorage.setItem('current_warehouse_id', userId);
+            localStorage.setItem('slamtak-warehouse-id', userId);
+
+            console.log('✅ تم حفظ بيانات المستخدم في localStorage (loginFromLocalStorage)');
+            console.log('🏭 current_warehouse_id set:', userId.substring(0, 8) + '...');
+
+            // التحقق من الحفظ
+            const savedEmail = localStorage.getItem('slamtak-user-email');
+            const savedId = localStorage.getItem('slamtak-user-id');
+            const savedAuthStatus = localStorage.getItem('slamtak-auth-status');
+            const savedWarehouseId = localStorage.getItem('current_warehouse_id');
+
+            console.log('✅ التحقق من الحفظ (loginFromLocalStorage):');
+            console.log('  📧 Email:', savedEmail);
+            console.log('  🆔 ID:', savedId);
+            console.log('  🔐 Auth Status:', savedAuthStatus);
+            console.log('  🏭 Warehouse ID:', savedWarehouseId ? savedWarehouseId.substring(0, 8) + '...' : 'null');
+
+            // حفظ أيضاً في currentUser للتوافق مع الكود القديم
             localStorage.setItem('currentUser', JSON.stringify({
-                id: user.id || 'local_' + Date.now(),
+                id: userId,
                 email: user.email,
                 phone: user.phone,
-                warehouseId: user.warehouseId || user.id || 'local_' + Date.now()
+                warehouseId: user.warehouseId || userId
             }));
-            
+
             localStorage.setItem('localAuth', 'true');
             
             window.location.replace('add-product.html');
-        }
-        
-        // دالة handleLogin معدلة - تعتمد على localStorage فقط
-        async function handleLogin(event) {
-            event.preventDefault();
-            
-            const identifier = document.getElementById('identifier').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('errorMessage');
-            
-            // التحقق من وجود عنصر الخطأ
-            if (!errorDiv) {
-                console.error('❌ عنصر errorMessage غير موجود في DOM');
-                return;
-            }
-            
-            // إخفاء رسائل الخطأ السابقة
-            errorDiv.style.display = 'none';
-            errorDiv.textContent = '';
-            
-            // التحقق إذا كان الإيميل (لـ Supabase)
-            if (identifier.includes('@')) {
-                console.log('📧 استخدام Supabase Auth للإيميل...');
-                const result = await signInWithSupabase(identifier, password);
-                
-                if (!result.success) {
-                    errorDiv.textContent = result.error;
-                    errorDiv.style.display = 'block';
-                }
-                
-                return;
-            }
-            
-            // استخدام localStorage مباشرة (بدون IndexedDB)
-            console.log('📱 استخدام localStorage...');
-            loginFromLocalStorage(identifier, password, errorDiv);
         }
         
         // تعديل مستحدث النموذج لاستخدام الدالة الجديدة
@@ -536,21 +562,33 @@
         async function signOut() {
             try {
                 // مسح الجلسة من localStorage
-                localStorage.removeItem('supabase.auth.token');
                 localStorage.removeItem('currentUser');
-                console.log('🗑️ تم مسح الجلسة من localStorage');
+                console.log('🗑️ تم مسح بيانات التطبيق');
                 
-                const { error } = await window.supabase.auth.signOut();
-                
-                if (error) {
-                    console.error('❌ خطأ في تسجيل الخروج:', error);
-                } else {
-                    console.log('✅ تم تسجيل الخروج بنجاح');
+                const client = SupabaseSingleton.getClient();
+                if (client) {
+                    const { error } = await client.auth.signOut();
+                    if (error) {
+                        console.error('❌ خطأ في تسجيل الخروج:', error);
+                    } else {
+                        console.log('✅ تم تسجيل الخروج بنجاح');
+                    }
                 }
+                
+                // مسح بيانات localStorage
+                localStorage.removeItem('slamtak-user-email');
+                localStorage.removeItem('slamtak-user-id');
+                localStorage.removeItem('slamtak-auth-status');
                 
                 window.location.replace('login.html');
             } catch (error) {
                 console.error('❌ خطأ في تسجيل الخروج:', error);
+                
+                // مسح بيانات localStorage حتى في حالة الخطأ
+                localStorage.removeItem('slamtak-user-email');
+                localStorage.removeItem('slamtak-user-id');
+                localStorage.removeItem('slamtak-auth-status');
+                
                 window.location.replace('login.html');
             }
         }
@@ -566,14 +604,5 @@
     <script src="ai-database.js"></script>
     <script src="ai-ui.js"></script>
     <script src="ai-assistant.js"></script>
-    
-    <script>
-        if (window.AIValidation) {
-            AIValidation.enableAutoValidation('loginForm', {
-                'identifier': 'required',
-                'password': 'required'
-            });
-        }
-    </script>
     </body>
 </html>

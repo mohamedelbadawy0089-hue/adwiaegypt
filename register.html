@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل مخزن</title>
     <script src="navigation.js"></script>
+    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body {
             display: flex;
@@ -237,11 +239,23 @@
     </div>
 
     <script>
-        // قاعدة بيانات محلية للمستخدمين المسجلين باستخدام IndexedDB
+        // إعداد Supabase
+        const supabaseUrl = 'https://iksjhjxwphmvthryfeae.supabase.co';
+        const supabaseKey = 'sb_publishable_0DUy2mtXS6m5S8PwTDAANQ_XWlzbu0G';
+        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // إنشاء قاعدة بيانات IndexedDB باستخدام Dexie.js
+        const db = new Dexie('WarehouseDB');
+        db.version(1).stores({
+            users: '++id, email, phone',
+            settings: 'key'
+        });
+
+        // قاعدة بيانات محلية للمستخدمين المسجلين
         let registeredUsers = [];
-        let db;
+        let indexedDB;
         
-        // إنشاء قاعدة بيانات IndexedDB
+        // إنشاء قاعدة بيانات IndexedDB (للإصدار القديم)
         function initDB() {
             const request = indexedDB.open('WarehouseDB', 1);
             
@@ -252,17 +266,21 @@
             };
             
             request.onsuccess = function() {
-                db = request.result;
+                indexedDB = request.result;
                 loadUsers();
             };
             
             request.onupgradeneeded = function(e) {
-                db = e.target.result;
+                indexedDB = e.target.result;
                 
-                if (!db.objectStoreNames.contains('users')) {
-                    const objectStore = db.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
+                if (!indexedDB.objectStoreNames.contains('users')) {
+                    const objectStore = indexedDB.createObjectStore('users', { keyPath: 'id', autoIncrement: true });
                     objectStore.createIndex('email', 'email', { unique: true });
                     objectStore.createIndex('phone', 'phone', { unique: true });
+                }
+                
+                if (!indexedDB.objectStoreNames.contains('settings')) {
+                    indexedDB.createObjectStore('settings', { keyPath: 'key' });
                 }
             };
         }
@@ -312,28 +330,50 @@
         }
         
         function saveUser(userData, callback) {
-            if (!db) {
-                // استخدام localStorage كبديل
-                const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-                users.push(userData);
-                localStorage.setItem('registeredUsers', JSON.stringify(users));
-                registeredUsers = users;
-                callback(true);
-                return;
-            }
-            
-            const transaction = db.transaction(['users'], 'readwrite');
-            const objectStore = transaction.objectStore('users');
-            const request = objectStore.add(userData);
-            
-            request.onsuccess = function() {
-                loadUsers();
-                callback(true);
-            };
-            
-            request.onerror = function() {
-                callback(false);
-            };
+            // حفظ المستخدم في Supabase للحصول على UUID
+            supabaseClient
+                .from('warehouses')
+                .insert([{
+                    name: userData.name,
+                    email: userData.email,
+                    phone: userData.phone,
+                    governorate: userData.governorate,
+                    password: userData.password,
+                    created_at: new Date().toISOString()
+                }])
+                .select()
+                .then(({ data, error }) => {
+                    if (error) {
+                        console.error('خطأ في حفظ المستخدم في Supabase:', error);
+                        // استخدام Dexie.js كبديل
+                        db.users.add(userData)
+                            .then(() => {
+                                loadUsers();
+                                callback(true, null);
+                            })
+                            .catch(error => {
+                                console.error('خطأ في حفظ المستخدم:', error);
+                                // استخدام localStorage كبديل
+                                const users = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+                                users.push(userData);
+                                localStorage.setItem('registeredUsers', JSON.stringify(users));
+                                registeredUsers = users;
+                                callback(true, null);
+                            });
+                    } else {
+                        // حفظ المستخدم محلياً مع UUID من Supabase
+                        userData.id = data[0].id;
+                        db.users.add(userData)
+                            .then(() => {
+                                loadUsers();
+                                callback(true, data[0].id);
+                            })
+                            .catch(error => {
+                                console.error('خطأ في حفظ المستخدم محلياً:', error);
+                                callback(true, data[0].id);
+                            });
+                    }
+                });
         }
         
         // تهيئة قاعدة البيانات عند تحميل الصفحة
@@ -597,12 +637,34 @@
                     status: 'active'
                 };
                 
-                saveUser(newUser, function(success) {
+                saveUser(newUser, function(success, warehouseId) {
                     if (success) {
+                        if (!warehouseId) {
+                            alert(currentLang === 'ar' ? 'حدث خطأ: لم يتم الحصول على معرف المخزن من Supabase. يرجى التحقق من الاتصال بالإنترنت.' : 'Error: Failed to get warehouse ID from Supabase. Please check your internet connection.');
+                            return;
+                        }
+                        
                         alert(translations[currentLang].successMsg);
                         // حفظ المستخدم في الجلسة والانتقال للقائمة
                         sessionStorage.setItem('currentUser', JSON.stringify(newUser));
-                        window.location.replace('menu.html');
+                        
+                        // حفظ معرف المخزن في localStorage (UUID من Supabase فقط)
+                        console.log('🔍 Debug: Saving warehouse ID to localStorage:', warehouseId);
+                        
+                        // استخدام localStorage لحفظ معرف المخزن
+                        localStorage.setItem('currentWarehouseId', warehouseId);
+                        console.log('🔍 Debug: Warehouse ID saved to localStorage:', warehouseId);
+                        
+                        // محاولة حفظ في IndexedDB أيضاً
+                        db.settings.put({ key: 'currentWarehouseId', value: warehouseId })
+                            .then(() => {
+                                console.log('🔍 Debug: Warehouse ID also saved to IndexedDB:', warehouseId);
+                            })
+                            .catch(error => {
+                                console.error('خطأ في حفظ معرف المخزن في IndexedDB:', error);
+                            });
+                        
+                        window.location.replace('stock.html');
                     } else {
                         alert(currentLang === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'An error occurred during registration');
                     }

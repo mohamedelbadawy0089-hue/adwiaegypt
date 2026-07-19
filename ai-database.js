@@ -10,21 +10,9 @@
 
         async init() {
             try {
-                console.log('🚀 تهيئة AIDatabase (localStorage Mode)...');
-                
-                // التحقق من وجود البيانات في localStorage
-                if (!localStorage.getItem(this.dbName + '_products')) {
-                    localStorage.setItem(this.dbName + '_products', JSON.stringify([]));
-                }
-                
-                if (!localStorage.getItem(this.dbName + '_initialized')) {
-                    localStorage.setItem(this.dbName + '_initialized', Date.now().toString());
-                }
-                
-                this.isInitialized = true;
-                console.log('✅ AIDatabase Initialized (localStorage)');
-                await this.migrateLocalStorage();
-                return true;
+                console.warn('🚫 تم تعطيل AIDatabase (localStorage Mode) بناءً على طلب المستخدم');
+                this.isInitialized = false;
+                return false;
             } catch (error) {
                 console.error('❌ خطأ في تهيئة AIDatabase:', error);
                 return false;

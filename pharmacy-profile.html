@@ -148,7 +148,7 @@
 
     <script>
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        if (!currentUser) window.location.replace('login.html');
+        if (!currentUser) if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
 
         const currentPharmacy = JSON.parse(sessionStorage.getItem('selectedPharmacyProfile'));
         if (!currentPharmacy) { alert('لم يتم العثور على بيانات الصيدلية'); window.location.replace('pharmacies.html'); }

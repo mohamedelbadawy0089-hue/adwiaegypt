@@ -125,6 +125,28 @@ class ArabicNumberConverter {
     convertRealTime(text, callback) {
         console.log('🔄 Real-time conversion started:', text);
         let convertedText = text;
+        
+        // معالجة الكسور العشرية بالعامية المصرية (قبل تحويل الأرقام)
+        // النمط: "مية وسبعتاشر وتسعتاشر من مية" → 117.19
+        const egyptianFractionPattern = /(\S+?)\s*و\s*(\S+?)\s*و\s*(\S+?)\s*من\s*(?:مئة|ميه|مية|100)\b/gi;
+        convertedText = convertedText.replace(egyptianFractionPattern, (m, p1, p2, p3) => {
+            const n1 = this.convertSingleNumber(p1) || 0;
+            const n2 = this.convertSingleNumber(p2) || 0;
+            const n3 = this.convertSingleNumber(p3) || 0;
+            const whole = n1 + n2;
+            const fraction = n3 / 100;
+            return (whole + fraction).toFixed(2);
+        });
+        
+        // نمط مبسط: "مئة وسبعتاشر من مية" → 100.17
+        const simpleFractionPattern = /(\S+?)\s*و\s*(\S+?)\s*من\s*(?:مئة|ميه|مية|100)\b/gi;
+        convertedText = convertedText.replace(simpleFractionPattern, (m, p1, p2) => {
+            const n1 = this.convertSingleNumber(p1) || 0;
+            const n2 = this.convertSingleNumber(p2) || 0;
+            const fraction = n2 / 100;
+            return (n1 + fraction).toFixed(2);
+        });
+        
         const matches = text.match(this.numberPattern);
         if (matches) {
             matches.forEach(match => {
@@ -158,6 +180,21 @@ class ArabicNumberConverter {
         
         // الكسور المعزولة (مثل "خمسة من مية")
         convertedText = convertedText.replace(/(?:^|\s|،)(?:و\s+)?(\d{1,2})\s*(?:من\s+|على\s+|بالمية|%)(?:مئة|ميه|مية|100|قرش|صاغ)\b/gi, (m, p1) => ` 0.${p1.padStart(2, '0')}`);
+        
+        // معالجة الكسور العشرية بالعامية المصرية: "مية وسبعتاشر وتسعتاشر من مية" → 117.19
+        // النمط: رقم (صحيح) + و + رقم (كسر) + من مية
+        convertedText = convertedText.replace(/(\d+)\s*و\s*(\d+)\s*و\s*(\d+)\s*من\s*(?:مئة|ميه|مية|100)\b/gi, (m, p1, p2, p3) => {
+            const whole = parseInt(p1) + parseInt(p2);
+            const fraction = parseInt(p3) / 100;
+            return (whole + fraction).toFixed(2);
+        });
+        
+        // نمط مبسط: "مئة وسبعتاشر وتسعتاشر من مية" (مع تحويل الكلمات أولاً)
+        convertedText = convertedText.replace(/(\d+)\s*و\s*(\d+)\s*من\s*(?:مئة|ميه|مية|100)\b/gi, (m, p1, p2) => {
+            const whole = parseInt(p1);
+            const fraction = parseInt(p2) / 100;
+            return (whole + fraction).toFixed(2);
+        });
         
         // دعم صيغة "فاصلة/نقطة" للأرقام الكبيرة
         convertedText = convertedText.replace(/(\d+)\s*(?:فاصلة|بوينت|علامة عشرية|نقطة)\s*(\d+)/gi, (m, p1, p2) => `${p1}.${p2}`);
@@ -300,22 +337,38 @@ class VoiceInputProcessor {
     initializeSpeechRecognition() {
         // التحقق من دعم المتصفح
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            console.warn('متصفحك لا يدعم الإدخال الصوتي');
+            console.warn('❌ متصفحك لا يدعم الإدخال الصوتي');
             if (this.voiceBtn) {
                 this.voiceBtn.style.display = 'none';
+            }
+            // إخفاء جميع أزرار الميكروفون
+            if (this.fieldMicBtns) {
+                this.fieldMicBtns.forEach(btn => btn.style.display = 'none');
             }
             return;
         }
         
-        // تهيئة الـ Speech Recognition
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        this.recognition = new SpeechRecognition();
-        
-        // إعدادات اللغة العربية المصرية
-        this.recognition.lang = 'ar-EG';
-        this.recognition.continuous = false;
-        this.recognition.interimResults = false;
-        this.recognition.maxAlternatives = 1;
+        try {
+            // تهيئة الـ Speech Recognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition = new SpeechRecognition();
+            
+            // إعدادات محسنة للدقة الأفضل
+            this.recognition.lang = 'en-US';
+            this.recognition.continuous = false;
+            this.recognition.interimResults = false;
+            this.recognition.maxAlternatives = 3;
+            
+            console.log('✅ تم تهيئة التعرف الصوتي بنجاح');
+        } catch (error) {
+            console.error('❌ فشل في تهيئة التعرف الصوتي:', error);
+            if (this.voiceBtn) {
+                this.voiceBtn.style.display = 'none';
+            }
+            if (this.fieldMicBtns) {
+                this.fieldMicBtns.forEach(btn => btn.style.display = 'none');
+            }
+        }
     }
     
     bindElements() {
@@ -361,30 +414,88 @@ class VoiceInputProcessor {
             });
         }
         
-        // أحداث الـ Speech Recognition
+        // أحداث الـ Speech Recognition محسنة لالتقاط أفضل البيانات
         this.recognition.onstart = () => {
             console.log('🎤 بدأ الاستماع' + (this.targetField ? ` لحقل ${this.targetField}` : ' العام') + '...');
+            console.log('🔊 إعدادات الميكروفون:', {
+                lang: this.recognition.lang,
+                continuous: this.recognition.continuous,
+                interimResults: this.recognition.interimResults,
+                maxAlternatives: this.recognition.maxAlternatives
+            });
             this.updateButtonState(true);
         };
         
         this.recognition.onresult = (event) => {
-            const result = event.results[0][0];
-            const transcript = result.transcript;
+            console.log('📝 تم الحصول على نتائج التعرف الصوتي:', event.results.length, 'نتيجة');
+            console.log('🔊 تفاصيل النتائج:', event.results);
             
-            console.log('📝 النتيجة:', transcript);
+            // معالجة جميع البدائل المتاحة للدقة الأفضل
+            const results = event.results[0];
+            let bestTranscript = results[0].transcript;
+            let bestConfidence = results[0].confidence || 0;
             
-            if (this.targetField) {
-                // إدخال مستهدف لحقل بعينه
-                this.processSingleFieldInput(transcript, this.targetField);
+            // البحث عن أفضل نتيجة بناءً على الثقة والتطابق
+            for (let i = 1; i < results.length; i++) {
+                const alternative = results[i];
+                const confidence = alternative.confidence || 0;
+                
+                console.log(`🔍 البديل ${i}:`, alternative.transcript, '(ثقة:', (confidence * 100).toFixed(1) + '%)');
+                
+                // للأسماء الطويلة، نفضل النتيجة الأطول بثقة عالية
+                if (this.targetField === 'productName' && 
+                    alternative.transcript.length > bestTranscript.length && 
+                    confidence > bestConfidence * 0.8) {
+                    bestTranscript = alternative.transcript;
+                    bestConfidence = confidence;
+                }
+                // للحقول الأخرى، نفضل النتيجة الأعلى ثقة
+                else if (confidence > bestConfidence) {
+                    bestTranscript = alternative.transcript;
+                    bestConfidence = confidence;
+                }
+            }
+            
+            console.log('📝 أفضل نتيجة:', bestTranscript, '(ثقة:', (bestConfidence * 100).toFixed(1) + '%)');
+            console.log('🎯 الحقل المستهدف:', this.targetField);
+            
+            // التحقق من جودة النتيجة
+            if (bestConfidence < 0.5) {
+                console.warn('⚠️ الثقة منخفضة، قد تحتاج للتحدث بوضوح أكبر');
+                if (window.showCustomAlert) {
+                    showCustomAlert('🔇 جودة الصوت منخفضة<br>يرجى التحدث بوضوح أقرب من الميكروفون', 'warning');
+                }
+            }
+            
+            // تطبيق التدقيق الإملائي المحسن للأسماء الطويلة
+            if (this.targetField === 'productName') {
+                this.processMedicationName(bestTranscript);
             } else {
-                // معالجة النص الذكية العامة
-                this.processVoiceInput(transcript);
+                this.processSingleFieldInput(bestTranscript, this.targetField);
             }
         };
         
         this.recognition.onerror = (event) => {
             console.error('❌ خطأ في الإدخال الصوتي:', event.error);
             this.handleError(event.error);
+            
+            // معالجة خاصة لمشاكل الميكروفون
+            if (event.error === 'not-allowed') {
+                console.warn('🚫 تم رفض إذن الميكروفون');
+                if (window.showCustomAlert) {
+                    showCustomAlert('🚫 <strong>تم رفض إذن الميكروفون!</strong><br>يرجى السماح بالوصول للميكروفون في إعدادات المتصفح', 'error');
+                }
+            } else if (event.error === 'no-speech') {
+                console.warn('🔇 لم يتم اكتشاف أي صوت');
+                if (window.showCustomAlert) {
+                    showCustomAlert('🔇 <strong>لم يتم اكتشاف أي صوت</strong><br>يرجى التحدث بوضوح في الميكروفون', 'warning');
+                }
+            } else if (event.error === 'audio-capture') {
+                console.warn('🎤 لا يمكن الوصول للميكروفون');
+                if (window.showCustomAlert) {
+                    showCustomAlert('🎤 <strong>لا يمكن الوصول للميكروفون!</strong><br>يرجى التحقق من إعدادات الميكروفون', 'error');
+                }
+            }
         };
         
         this.recognition.onend = () => {
@@ -393,17 +504,72 @@ class VoiceInputProcessor {
         };
     }
     
-    startListening(targetField = null) {
-        if (!this.recognition) return;
+    async startListening(targetField = null) {
+        if (!this.recognition) {
+            console.error('❌ التعرف الصوتي غير مهيأ');
+            return;
+        }
         
         try {
+            // طلب إذن الميكروفون أولاً (مهم جداً للمتصفحات الحديثة)
+            console.log('🔐 طلب إذن الميكروفون...');
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true,
+                    sampleRate: 44100,
+                    channelCount: 1
+                },
+                video: false 
+            });
+            console.log('✅ تم الحصول على إذن الميكروفون');
+            
+            // إيقاف الـ stream مباشرة (نحتاج فقط للإذن)
+            stream.getTracks().forEach(track => track.stop());
+            
             this.targetField = targetField;
-            // إلغاء جميع أشكال التكرار الصوتي والاستماع التلقائي
+            
+            // تعيين اللغة حسب الحقل المستهدف مع إعدادات محسنة للدقة
+            if (targetField === 'productName') {
+                // إعدادات محسنة للتعرف على أسماء الأدوية
+                this.recognition.lang = 'en-US';
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.maxAlternatives = 3; // زيادة البدائل للدقة الأفضل
+                console.log('🌐 تم تعيين لغة التعرف الصوتي إلى en-US لحقل اسم المنتج (إعدادات محسنة)');
+            } else {
+                this.recognition.lang = 'ar-EG';
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.maxAlternatives = 1;
+                console.log('🌐 تم تعيين لغة التعرف الصوتي إلى ar-EG للحقول الأخرى');
+            }
+            
             this.autoRepeatEnabled = false;
             this.recognition.start();
             this.isListening = true;
+            console.log('🎤 بدأ الاستماع بنجاح');
+            
         } catch (error) {
-            console.error('فشل في بدء الاستماع:', error);
+            console.error('❌ فشل في بدء الاستماع:', error);
+            
+            // معالجة أخطاء الإذن
+            if (error.name === 'NotAllowedError') {
+                console.error('❌ تم رفض إذن الميكروفون');
+                if (window.showCustomAlert) {
+                    showCustomAlert('❌ تم رفض إذن الميكروفون<br>يرجى السماح بالوصول في إعدادات المتصفح', 'error');
+                }
+            } else if (error.name === 'NotFoundError') {
+                console.error('❌ لم يتم العثور على ميكروفون');
+                if (window.showCustomAlert) {
+                    showCustomAlert('❌ لم يتم العثور على ميكروفون<br>يرجى توصيل ميكروفون', 'error');
+                }
+            } else {
+                if (window.showCustomAlert) {
+                    showCustomAlert('❌ خطأ في الميكروفون: ' + error.message, 'error');
+                }
+            }
         }
     }
     
@@ -411,6 +577,84 @@ class VoiceInputProcessor {
         if (this.recognition && this.isListening) {
             this.recognition.stop();
             this.isListening = false;
+        }
+    }
+    
+    // معالجة متخصصة لأسماء الأدوية مع تدقيق إملائي محسن
+    async processMedicationName(transcript) {
+        console.log(`💊 معالجة اسم الدواء: "${transcript}"`);
+        
+        try {
+            // عرض رسالة تحميل للمستخدم
+            if (window.showCustomAlert) {
+                showCustomAlert('🔍 جاري التحقق من اسم الدواء...', 'info');
+            }
+            
+            let finalName = transcript;
+            
+            // 1. استخدام المدقق الإملائي المحسن أولاً
+            if (window.medicationSpellChecker) {
+                try {
+                    finalName = await window.medicationSpellChecker.checkSpelling(transcript);
+                    if (finalName !== transcript) {
+                        console.log('✅ تم تصحيح اسم الدواء:', transcript, '->', finalName);
+                        if (window.showCustomAlert) {
+                            showCustomAlert(`✅ تم تصحيح اسم الدواء إلى: ${finalName}`, 'success');
+                        }
+                    } else {
+                        console.log('✅ اسم الدواء صحيح:', transcript);
+                        if (window.showCustomAlert) {
+                            showCustomAlert('✅ اسم الدواء صحيح', 'success');
+                        }
+                    }
+                } catch (spellError) {
+                    console.warn('⚠️ المدقق الإملائي فشل:', spellError.message);
+                }
+            }
+            
+            // 2. التحقق الإضافي عبر RxNav إذا فشل المدقق
+            if (finalName === transcript) {
+                try {
+                    const rxnavResponse = await fetch(`https://rxnav.nlm.nih.gov/REST/spellcheck?name=${encodeURIComponent(transcript)}`);
+                    const rxnavData = await rxnavResponse.json();
+                    
+                    if (rxnavData.suggestions?.suggestion?.length > 0) {
+                        const suggestedTerm = rxnavData.suggestions.suggestion[0].suggestedTerm;
+                        if (suggestedTerm !== finalName) {
+                            finalName = suggestedTerm;
+                            console.log('🔤 تم التصحيح الإضافي عبر RxNav:', suggestedTerm);
+                            if (window.showCustomAlert) {
+                                showCustomAlert(`✅ تم تصحيح اسم الدواء إلى: ${finalName}`, 'success');
+                            }
+                        }
+                    }
+                } catch (rxnavError) {
+                    console.warn('⚠️ RxNav فشل:', rxnavError.message);
+                }
+            }
+            
+            // 3. تحديث حقل اسم المنتج بالنتيجة النهائية
+            const productField = document.getElementById('productName');
+            if (productField) {
+                productField.value = finalName;
+                // تشغيل أحداث التحقق من صحة النموذج
+                productField.dispatchEvent(new Event('input', { bubbles: true }));
+                productField.dispatchEvent(new Event('change', { bubbles: true }));
+                productField.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
+            
+            // 4. حفظ النتيجة في البيانات
+            const data = { productName: finalName };
+            this.fillFields(data);
+            this.showResult(data);
+            
+        } catch (error) {
+            console.error('❌ خطأ في معالجة اسم الدواء:', error);
+            
+            // استخدام النص الأصلي كخيار احتياطي
+            const fallbackData = { productName: transcript };
+            this.fillFields(fallbackData);
+            this.showResult(fallbackData);
         }
     }
     
@@ -430,6 +674,68 @@ class VoiceInputProcessor {
             case 'price':
             case 'priceInt':
             case 'priceFrac':
+                console.log(`🔍 البحث عن كسر مصري في: "${transcript}"`);
+                
+                // معالجة الكسور العشرية بالعامية المصرية: "مية وسبعتاشر وتسعتاشر من مية"
+                // نتحقق من النص الأصلي قبل التحويل
+                const egyptianFractionMatch = /(\S+?)\s*و\s*(\S+?)\s*و\s*(\S+?)\s*من\s*(?:مئة|ميه|مية|100)\b/gi.exec(transcript);
+                console.log(`🔍 نتيجة البحث عن كسر مصري:`, egyptianFractionMatch);
+                
+                if (egyptianFractionMatch && fieldId === 'price') {
+                    const n1 = this.arabicNumberConverter.convertSingleNumber(egyptianFractionMatch[1]) || 0;
+                    const n2 = this.arabicNumberConverter.convertSingleNumber(egyptianFractionMatch[2]) || 0;
+                    const n3 = this.arabicNumberConverter.convertSingleNumber(egyptianFractionMatch[3]) || 0;
+                    const whole = n1 + n2;
+                    const fraction = n3 / 100;
+                    data[fieldId] = (whole + fraction).toFixed(2);
+                    console.log(`✅ تم تحويل الكسر المصري: ${transcript} → ${data[fieldId]} (n1=${n1}, n2=${n2}, n3=${n3})`);
+                    break;
+                }
+                
+                // معالجة "فاصلة": "مية وسبعتاشر فاصلة تسعتاشر" → 117.19
+                const commaMatch = /(\S+?)\s*و\s*(\S+?)\s*(?:فاصلة|نقطة)\s*(\S+)/gi.exec(transcript);
+                console.log(`🔍 نتيجة البحث عن فاصلة:`, commaMatch);
+                
+                if (commaMatch && fieldId === 'price') {
+                    const n1 = this.arabicNumberConverter.convertSingleNumber(commaMatch[1]) || 0;
+                    const n2 = this.arabicNumberConverter.convertSingleNumber(commaMatch[2]) || 0;
+                    const n3 = this.arabicNumberConverter.convertSingleNumber(commaMatch[3]) || 0;
+                    const whole = n1 + n2;
+                    const fraction = n3 / 100;
+                    data[fieldId] = (whole + fraction).toFixed(2);
+                    console.log(`✅ تم تحويل الفاصلة: ${transcript} → ${data[fieldId]} (n1=${n1}, n2=${n2}, n3=${n3})`);
+                    break;
+                }
+                
+                // نمط مبسط: "مئة وسبعتاشر من مية"
+                const simpleFractionMatch = /(\S+?)\s*و\s*(\S+?)\s*من\s*(?:مئة|ميه|مية|100)\b/gi.exec(transcript);
+                console.log(`🔍 نتيجة البحث عن كسر مبسط:`, simpleFractionMatch);
+                
+                if (simpleFractionMatch && fieldId === 'price') {
+                    const n1 = this.arabicNumberConverter.convertSingleNumber(simpleFractionMatch[1]) || 0;
+                    const n2 = this.arabicNumberConverter.convertSingleNumber(simpleFractionMatch[2]) || 0;
+                    const fraction = n2 / 100;
+                    data[fieldId] = (n1 + fraction).toFixed(2);
+                    console.log(`✅ تم تحويل الكسر المبسط: ${transcript} → ${data[fieldId]} (n1=${n1}, n2=${n2})`);
+                    break;
+                }
+                
+                // نمط أبسط: "مئة من مية" أو "مئة من مية وسبعتاشر"
+                const evenSimplerMatch = /(\S+?)\s*من\s*(?:مئة|ميه|مية|100)(?:\s*و\s*(\S+))?\b/gi.exec(transcript);
+                console.log(`🔍 نتيجة البحث عن نمط أبسط:`, evenSimplerMatch);
+                
+                if (evenSimplerMatch && fieldId === 'price') {
+                    const n1 = this.arabicNumberConverter.convertSingleNumber(evenSimplerMatch[1]) || 0;
+                    let fraction = 0;
+                    if (evenSimplerMatch[2]) {
+                        const n2 = this.arabicNumberConverter.convertSingleNumber(evenSimplerMatch[2]) || 0;
+                        fraction = n2 / 100;
+                    }
+                    data[fieldId] = (n1 + fraction).toFixed(2);
+                    console.log(`✅ تم تحويل النمط الأبسط: ${transcript} → ${data[fieldId]} (n1=${n1}, n2=${evenSimplerMatch[2]})`);
+                    break;
+                }
+                
                 // استخدام مكتبة تحويل الأرقام العربية للتعرف على الأرقام العامية المعقدة
                 const priceNumberMatch = lowerText.match(/\d+/);
                 if (priceNumberMatch) {
@@ -443,7 +749,7 @@ class VoiceInputProcessor {
                     // محاولة تحويل الأرقام العامية المعقدة مثل "مية وتسعتاشر"
                     const conversion = this.arabicNumberConverter.extractNumbersAndWords(lowerText);
                     if (conversion.numbers && conversion.numbers.length > 0) {
-                        // استخدام أول رقم تم استخراجه
+                        // استخدام أول رقم تم استخرجه
                         let numValue = conversion.numbers[0].number;
                         // للحقل priceFrac، تأكد من أن القيمة بين 0 و 99
                         if (fieldId === 'priceFrac' && (numValue < 0 || numValue > 99)) {
@@ -462,52 +768,6 @@ class VoiceInputProcessor {
                             data[fieldId] = numValue.toString();
                         }
                     }
-                }
-                break;
-            case 'productName':
-                data.productName = this.arabicNumberConverter.productDatabase[transcript.trim()] || transcript.trim();
-                break;
-            case 'prodDay':
-            case 'prodMonth':
-            case 'prodYear':
-            case 'expDay':
-            case 'expMonth':
-            case 'expYear':
-                // استخدام مكتبة تحويل الأرقام العربية للتعرف على الأرقام العامية
-                let numValue = null;
-                const dateNumberMatch = lowerText.match(/\d+/);
-                if (dateNumberMatch) {
-                    numValue = parseInt(dateNumberMatch[0], 10);
-                } else {
-                    const directNumber = this.arabicNumberConverter.convertSingleNumber(lowerText.trim());
-                    if (directNumber !== null) {
-                        numValue = directNumber;
-                    } else {
-                        const conversion = this.arabicNumberConverter.extractNumbersAndWords(lowerText);
-                        if (conversion.numbers && conversion.numbers.length > 0) {
-                            numValue = conversion.numbers[0].number;
-                        }
-                    }
-                }
-
-                if (numValue !== null) {
-                    if (fieldId.includes('Year')) {
-                        const yearValue = this.arabicNumberConverter.parseYearPhrase(lowerText);
-                        if (yearValue !== null) {
-                            numValue = yearValue;
-                        } else if (numValue >= 0 && numValue <= 30) {
-                            numValue += 2000;
-                        }
-                    }
-                    // التحقق من الحدود حسب نوع الحقل
-                    if (fieldId.includes('Day') && (numValue < 1 || numValue > 31)) {
-                        numValue = Math.max(1, Math.min(31, numValue));
-                    } else if (fieldId.includes('Month') && (numValue < 1 || numValue > 12)) {
-                        numValue = Math.max(1, Math.min(12, numValue));
-                    } else if (fieldId.includes('Year') && (numValue < 2000 || numValue > 2030)) {
-                        numValue = Math.max(2000, Math.min(2030, numValue));
-                    }
-                    data[fieldId] = numValue.toString();
                 }
                 break;
             case 'prodDate':
@@ -540,8 +800,6 @@ class VoiceInputProcessor {
                 } else if (fieldId === 'prodYear' || fieldId === 'expYear') {
                     data[fieldId] = (fallbackNumber >= 0 && fallbackNumber <= 30) ? (2000 + fallbackNumber).toString() : fallbackNumber.toString();
                 }
-            } else if (fieldId === 'productName') {
-                data.productName = transcript.trim();
             }
         }
 
@@ -577,7 +835,7 @@ class VoiceInputProcessor {
         }
     }
     
-    processVoiceInput(transcript) {
+    processVoiceResult(transcript) {
         console.log('🧠 معالجة النص v10.1:', transcript);
         
         try {
@@ -589,10 +847,19 @@ class VoiceInputProcessor {
             // تحليل ذكي للبيانات
             const processed = this.analyzeInput(conversion);
             
+            // تصحيح أسماء الأدوية لحقل المنتج
+            if (processed.productName && this.targetField === 'productName') {
+                if (typeof this.correctMedicineName === 'function') {
+                    processed.productName = this.correctMedicineName(processed.productName);
+                } else {
+                    console.warn('⚠️ وظيفة correctMedicineName غير متوفرة، يتم استخدام الاسم كما هو');
+                }
+            }
+            
             console.log('🎯 البيانات بعد التحليل:', processed);
             
             // ملء الحقول تلقائياً
-            this.fillFields(processed);
+            this.fillFields(processed, this.targetField);
             
             // عرض النتيجة للمستخدم
             this.showResult(processed);
@@ -611,6 +878,53 @@ class VoiceInputProcessor {
         const data = { productName: '', price: '', quantity: '', discount: '' };
         const lowerTranscript = transcript.toLowerCase();
         
+        // معالجة الكسور العشرية بالعامية المصرية أولاً
+        const egyptianFractionMatch = /(\S+?)\s*و\s*(\S+?)\s*و\s*(\S+?)\s*من\s*(?:مئة|ميه|مية|100)\b/gi.exec(transcript);
+        if (egyptianFractionMatch) {
+            const n1 = this.arabicNumberConverter.convertSingleNumber(egyptianFractionMatch[1]) || 0;
+            const n2 = this.arabicNumberConverter.convertSingleNumber(egyptianFractionMatch[2]) || 0;
+            const n3 = this.arabicNumberConverter.convertSingleNumber(egyptianFractionMatch[3]) || 0;
+            const whole = n1 + n2;
+            const fraction = n3 / 100;
+            data.price = (whole + fraction).toFixed(2);
+            console.log(`✅ Fallback: تحويل الكسر المصري: ${transcript} → ${data.price}`);
+        }
+        
+        // معالجة "فاصلة"
+        const commaMatch = /(\S+?)\s*و\s*(\S+?)\s*(?:فاصلة|نقطة)\s*(\S+)/gi.exec(transcript);
+        if (commaMatch && !data.price) {
+            const n1 = this.arabicNumberConverter.convertSingleNumber(commaMatch[1]) || 0;
+            const n2 = this.arabicNumberConverter.convertSingleNumber(commaMatch[2]) || 0;
+            const n3 = this.arabicNumberConverter.convertSingleNumber(commaMatch[3]) || 0;
+            const whole = n1 + n2;
+            const fraction = n3 / 100;
+            data.price = (whole + fraction).toFixed(2);
+            console.log(`✅ Fallback: تحويل الفاصلة: ${transcript} → ${data.price}`);
+        }
+        
+        // نمط مبسط
+        const simpleFractionMatch = /(\S+?)\s*و\s*(\S+?)\s*من\s*(?:مئة|ميه|مية|100)\b/gi.exec(transcript);
+        if (simpleFractionMatch && !data.price) {
+            const n1 = this.arabicNumberConverter.convertSingleNumber(simpleFractionMatch[1]) || 0;
+            const n2 = this.arabicNumberConverter.convertSingleNumber(simpleFractionMatch[2]) || 0;
+            const fraction = n2 / 100;
+            data.price = (n1 + fraction).toFixed(2);
+            console.log(`✅ Fallback: تحويل الكسر المبسط: ${transcript} → ${data.price}`);
+        }
+        
+        // نمط أبسط: "مئة من مية" أو "مئة من مية وسبعتاشر"
+        const evenSimplerMatch = /(\S+?)\s*من\s*(?:مئة|ميه|مية|100)(?:\s*و\s*(\S+))?\b/gi.exec(transcript);
+        if (evenSimplerMatch && !data.price) {
+            const n1 = this.arabicNumberConverter.convertSingleNumber(evenSimplerMatch[1]) || 0;
+            let fraction = 0;
+            if (evenSimplerMatch[2]) {
+                const n2 = this.arabicNumberConverter.convertSingleNumber(evenSimplerMatch[2]) || 0;
+                fraction = n2 / 100;
+            }
+            data.price = (n1 + fraction).toFixed(2);
+            console.log(`✅ Fallback: تحويل النمط الأبسط: ${transcript} → ${data.price}`);
+        }
+        
         // استخراج الأرقام من النص
         const numbers = transcript.match(/\d+/g) || [];
         
@@ -625,14 +939,16 @@ class VoiceInputProcessor {
         if (productName) data.productName = productName;
         
         // الرقم الأول = كمية
-        if (numbers.length >= 1) data.quantity = numbers[0];
+        if (!data.quantity && numbers.length >= 1) data.quantity = numbers[0];
         
-        // السعر فقط إذا ذُكرت عملة صريحة (جنيه/جنية/ريال/دولار)
-        const currencyWords = ['جنيه', 'جنية', 'ريال', 'دولار'];
-        const hasCurrency = currencyWords.some(w => lowerTranscript.includes(w));
-        
-        if (hasCurrency && numbers.length >= 2) {
-            data.price = numbers[1];
+        // السعر فقط إذا لم يتم تحويله بالكسر وذُكرت عملة صريحة
+        if (!data.price) {
+            const currencyWords = ['جنيه', 'جنية', 'ريال', 'دولار'];
+            const hasCurrency = currencyWords.some(w => lowerTranscript.includes(w));
+            
+            if (hasCurrency && numbers.length >= 2) {
+                data.price = numbers[1];
+            }
         }
         
         if (numbers.length >= 3) data.discount = numbers[2];
@@ -1806,14 +2122,14 @@ class VoiceInputProcessor {
         
         // 1. ملء اسم المنتج بمراعاة عدم مسح اسم أُدخل مسبقاً لصالح كلمات عشوائية
         if (data.productName && data.productName.trim() !== '') {
-            const isKnown = this.arabicNumberConverter.productDatabase && this.arabicNumberConverter.productDatabase[data.productName];
             const currentVal = this.productNameInput.value.trim();
+            const isEnglishMedicineName = /^[A-Za-z]/.test(data.productName) && data.productName.toLowerCase().includes('tablet') || data.productName.toLowerCase().includes('capsule') || data.productName.toLowerCase().includes('injection') || data.productName.toLowerCase().includes('syrup') || data.productName.toLowerCase().includes('cream') || data.productName.toLowerCase().includes('ointment') || data.productName.toLowerCase().includes('solution') || data.productName.toLowerCase().includes('spray') || data.productName.toLowerCase().includes('drops') || data.productName.toLowerCase().includes('gel') || data.productName.toLowerCase().includes('powder') || data.productName.toLowerCase().includes('suspension') || data.productName.toLowerCase().includes('elixir');
             
             if (currentVal !== '') {
-                // إذا كان الحقل ممتلئاً سلفاً، لا نقبل أي نص جديد إلا إذا كان منتجاً مؤكداً في قاعدة البيانات
-                if (isKnown) {
+                // إذا كان الحقل ممتلئاً سلفاً، نقبل القيمة إذا كانت اسم دواء بالإنجليزية أو منتجاً معروفاً
+                if (isEnglishMedicineName) {
                     this.productNameInput.value = data.productName;
-                    console.log('✅ تم تحديث اسم المنتج بصنف معروف:', data.productName);
+                    console.log('✅ تم تحديث اسم المنتج باسم دواء بالإنجليزية:', data.productName);
                 } else {
                     console.log('⚠️ تم حظر تجاوز اسم المنتج: الكلمة (' + data.productName + ') تعتبر عشوائية أو غير مسجلة وتم تجاهلها لحماية اسم المنتج الحالي.');
                 }
@@ -2468,6 +2784,100 @@ class WarehouseSystem {
             }
         }, 5000);
     }
+
+    // تصحيح اسم الدواء باستخدام قائمة أدوية معروفة
+    correctMedicineName(name) {
+        const medicineNames = [
+            'Paracetamol', 'Ibuprofen', 'Aspirin', 'Amoxicillin', 'Metformin',
+            'Lisinopril', 'Atorvastatin', 'Omeprazole', 'Albuterol', 'Prednisone',
+            'Metoprolol', 'Simvastatin', 'Losartan', 'Gabapentin', 'Sertraline',
+            'Levothyroxine', 'Warfarin', 'Citalopram', 'Furosemide', 'Hydrochlorothiazide',
+            'Amlodipine', 'Hydrocodone', 'Tramadol', 'Pantoprazole', 'Doxycycline',
+            'Azithromycin', 'Ciprofloxacin', 'Clindamycin', 'Diazepam', 'Oxycodone',
+            'Morphine', 'Codeine', 'Acetaminophen', 'Diclofenac', 'Naproxen',
+            'Celecoxib', 'Etanercept', 'Infliximab', 'Adalimumab', 'Certolizumab',
+            'Rituximab', 'Abatacept', 'Tocilizumab', 'Anakinra', 'Canakinumab',
+            'Colchicine', 'Probenecid', 'Allopurinol', 'Febuxostat', 'Benzbromarone',
+            'Probenecid', 'Sulfasalazine', 'Mesalamine', 'Balsalazide', 'Olsalazine',
+            'Dapsone', 'Sulfapyridine', 'Sulfamethoxazole', 'Trimethoprim', 'Pyrazinamide',
+            'Ethambutol', 'Isoniazid', 'Rifampin', 'Rifabutin', 'Rifapentine',
+            'Bedaquiline', 'Delamanid', 'Linezolid', 'Clofazimine', 'Cycloserine',
+            'Terizidone', 'Streptomycin', 'Amikacin', 'Kanamycin', 'Capreomycin',
+            'Viagra', 'Cialis', 'Levitra', 'Stendra', 'Staxyn', 'Spedra',
+            'Adderall', 'Ritalin', 'Concerta', 'Vyvanse', 'Focalin', 'Strattera',
+            'Intuniv', 'Kapvay', 'Tenex', 'Catapres', 'Aldomet', 'Methyldopa',
+            'Clonidine', 'Guanfacine', 'Reserpine', 'Minoxidil', 'Diazoxide',
+            'Hydralazine', 'Isosorbide', 'Nitroglycerin', 'Amyl nitrite', 'Nitroprusside',
+            'Epoprostenol', 'Treprostinil', 'Iloprost', 'Beraprost', 'Selexipag',
+            'Macitentan', 'Bosentan', 'Ambrisentan', 'Sitaxsentan', 'Sildenafil',
+            'Tadalafil', 'Vardenafil', 'Avanafil', 'Phentolamine', 'Yohimbine',
+            'Apomorphine', 'Cabergoline', 'Pramipexole', 'Ropinirole', 'Rotigotine',
+            'Piribedil', 'Bromocriptine', 'Pergolide', 'Lisuride', 'Carbidopa',
+            'Entacapone', 'Tolcapone', 'Safinamide', 'Opicapone', 'Monoamine',
+            'Selegiline', 'Rasagiline', 'Safinamide', 'Amantadine', 'Memantine',
+            'Donepezil', 'Galantamine', 'Rivastigmine', 'Tacrine', 'Huperzine',
+            'Propentofylline', 'Nicergoline', 'Xanomeline', 'Citicoline', 'Piracetam',
+            'Oxiracetam', 'Pramiracetam', 'Aniracetam', 'Fasoracetam', 'Phenylpiracetam',
+            'Levetiracetam', 'Brivaracetam', 'Perampanel', 'Topiramate', 'Zonisamide',
+            'Acetazolamide', 'Methazolamide', 'Dichlorphenamide', 'Ethoxzolamide', 'Methicillin',
+            'Nafcillin', 'Oxacillin', 'Cloxacillin', 'Dicloxacillin', 'Flucloxacillin',
+            'Penicillin G', 'Penicillin V', 'Procaine', 'Benzathine', 'Methicillin',
+            'Cloxacillin', 'Ticarcillin', 'Piperacillin', 'Mezlocillin', 'Azlocillin'
+        ];
+        
+        const threshold = 0.6; // تم خفض العتبة من 0.7 إلى 0.6 لتحسين التعرف على النطق
+        let bestMatch = name;
+        let highestSimilarity = 0;
+        
+        for (const med of medicineNames) {
+            const similarity = this.stringSimilarity(name.toLowerCase(), med.toLowerCase());
+            if (similarity > threshold && similarity > highestSimilarity) {
+                bestMatch = med;
+                highestSimilarity = similarity;
+            }
+        }
+        
+        if (highestSimilarity > 0) {
+            console.log(`💊 تم تصحيح اسم الدواء: ${name} → ${bestMatch} (تشابه: ${(highestSimilarity * 100).toFixed(1)}%)`);
+            return bestMatch;
+        }
+        
+        return name;
+    }
+
+    // حساب تشابه النصوص باستخدام مسافة ليفنشتاين
+    stringSimilarity(str1, str2) {
+        const longer = str1.length > str2.length ? str1 : str2;
+        const shorter = str1.length > str2.length ? str2 : str1;
+        if (longer.length === 0) return 1.0;
+        const editDistance = this.levenshteinDistance(longer, shorter);
+        return (longer.length - editDistance) / longer.length;
+    }
+
+    // حساب مسافة ليفنشتاين بين نصين
+    levenshteinDistance(a, b) {
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i];
+        }
+        for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j;
+        }
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i-1) === a.charAt(j-1)) {
+                    matrix[i][j] = matrix[i-1][j-1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i-1][j-1] + 1, // استبدال
+                        matrix[i][j-1] + 1,    // إضافة
+                        matrix[i-1][j] + 1     // حذف
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
 }
 
 // إضافة أنماط CSS للرسائل المتحركة
@@ -2497,5 +2907,32 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// تهيئة معالج الإدخال الصوتي عند تحميل الصفحة
+let voiceInputProcessor = null;
 
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎤 تهيئة نظام الإدخال الصوتي...');
+    
+    // انتظار تحميل جميع المكتبات
+    setTimeout(() => {
+        try {
+            voiceInputProcessor = new VoiceInputProcessor();
+            window.voiceInputProcessor = voiceInputProcessor;
+            console.log('✅ تم تهيئة نظام الإدخال الصوتي بنجاح');
+            
+            // إعلام المستخدم بجاهزية الميكروفون
+            if (window.showCustomAlert) {
+                showCustomAlert('🎤 الميكروفون جاهز للاستخدام<br>اضغط على أيقونة الميكروفون بجانب أي حقل', 'info');
+            }
+        } catch (error) {
+            console.error('❌ فشل في تهيئة نظام الإدخال الصوتي:', error);
+            if (window.showCustomAlert) {
+                showCustomAlert('❌ فشل في تهيئة الميكروفون<br>يرجى تحديث الصفحة', 'error');
+            }
+        }
+    }, 1000); // انتظار ثانية للتأكد من تحميل جميع المكتبات
+});
+
+// جعل الكlas متاحاً عالمياً
+window.VoiceInputProcessor = VoiceInputProcessor;
 

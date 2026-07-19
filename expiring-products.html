@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنتجات القريبة من انتهاء الصلاحية</title>
+    <title>المنتجات قريبة الانتهاء</title>
     <script src="navigation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <style>
         body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
         .back-arrow {
@@ -97,45 +99,80 @@
 
     <script>
         var currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        if (!currentUser) { window.location.replace('login.html'); }
+        if (!currentUser) { if(typeof window.showOfflineToast === 'function') window.showOfflineToast(); }
 
         var db = null;
         var expiringProducts = [];
+        var currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
 
         function initDB() {
-            var request = indexedDB.open('WarehouseDB', 5);
-            request.onupgradeneeded = function(e) {
-                var d = e.target.result;
-                if (!d.objectStoreNames.contains('products')) {
-                    var store = d.createObjectStore('products', { keyPath: 'id', autoIncrement: true });
-                    store.createIndex('userId', 'userId', { unique: false });
-                    store.createIndex('productName', 'productName', { unique: false });
+            // محاولة التحميل من Supabase أولاً
+            loadFromSupabase();
+        }
+
+        async function loadFromSupabase() {
+            try {
+                // عرض حالة التحميل
+                document.getElementById('tableWrapper').innerHTML = '<div class="empty-state">⏳ جاري تحميل المنتجات...</div>';
+
+                if (!window.SupabaseSingleton || !window.SupabaseSingleton.getClient()) {
+                    console.warn('⚠️ Supabase غير متاح');
+                    // عند عدم وجود Supabase، إظهار رسالة خطأ
+                    document.getElementById('tableWrapper').innerHTML = `
+                        <div class="empty-state">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📡</div>
+                            <div>تعذر الاتصال بالسيرفر</div>
+                            <div style="font-size: 12px; color: #999; margin-top: 10px;">يرجى التحقق من اتصال الإنترنت</div>
+                        </div>
+                    `;
+                    return;
                 }
-            };
-            request.onsuccess = function() {
-                db = request.result;
-                loadExpiringProducts();
-            };
-            request.onerror = function() {
-                loadFromLocalStorage();
-            };
-        }
 
-        function loadExpiringProducts() {
-            if (!db) { loadFromLocalStorage(); return; }
-            var tx = db.transaction(['products'], 'readonly');
-            var req = tx.objectStore('products').index('userId').getAll(currentUser.email);
-            req.onsuccess = function() {
-                var allProducts = req.result || [];
+                const supabaseClient = window.SupabaseSingleton.getClient();
+
+                // جلب المنتجات من Supabase مع warehouse_id filtering
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('*')
+                    .eq('warehouse_id', currentWarehouseId)
+                    .limit(200)
+                    .order('name');
+
+                if (error) throw error;
+
+                // تحويل البيانات
+                var allProducts = (data || []).map(function(p) {
+                    return {
+                        id: p.id,
+                        productName: p.name,
+                        name: p.name,
+                        price: p.price || 0,
+                        discount: p.discount || 0,
+                        quantity: p.quantity || 0,
+                        isUnlimited: !p.quantity || p.quantity_type === 'fixed',
+                        productionDate: p.production_date || p.productionDate,
+                        expiryDate: p.expiry_date || p.expiryDate,
+                        lowStockAlert: p.low_stock_alert || p.lowStockAlert,
+                        barcode: p.barcode,
+                        category: p.category,
+                        warehouse_id: p.warehouse_id
+                    };
+                });
+
+                console.log('✅ تم تحميل', allProducts.length, 'منتج من Supabase');
                 filterExpiringProducts(allProducts);
-            };
-            req.onerror = function() { loadFromLocalStorage(); };
-        }
 
-        function loadFromLocalStorage() {
-            var all = JSON.parse(localStorage.getItem('products')) || [];
-            var userProducts = all.filter(function(p) { return p.userId === currentUser.email; });
-            filterExpiringProducts(userProducts);
+            } catch (err) {
+                console.error('❌ خطأ في التحميل من Supabase:', err);
+                // عند عدم وجود إنترنت، إظهار رسالة خطأ
+                document.getElementById('tableWrapper').innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📡</div>
+                        <div>تعذر الاتصال بالسيرفر</div>
+                        <div style="font-size: 12px; color: #999; margin-top: 10px;">يرجى التحقق من اتصال الإنترنت</div>
+                    </div>
+                `;
+            }
         }
 
         function filterExpiringProducts(products) {

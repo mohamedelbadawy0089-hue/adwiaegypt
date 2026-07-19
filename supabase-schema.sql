@@ -2,12 +2,16 @@
 CREATE TABLE IF NOT EXISTS products (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
-    price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
-    quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
-    discount DECIMAL(5,2) DEFAULT 0 CHECK (discount >= 0 AND discount <= 100),
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    quantity INTEGER DEFAULT 0 CHECK (quantity >= 0),
+    discount DECIMAL(5,2) NOT NULL CHECK (discount >= 0 AND discount <= 100),
     barcode TEXT UNIQUE,
-    expiry_month INTEGER CHECK (expiry_month >= 1 AND expiry_month <= 12),
-    expiry_year INTEGER CHECK (expiry_year >= 2024 AND expiry_year <= 2100),
+    -- تاريخ الإنتاج (عمود واحد - اختياري)
+    production_date DATE,
+    
+    -- تاريخ الانتهاء (عمود واحد - اختياري)
+    expiry_date DATE,
+    warehouse_id TEXT NOT NULL DEFAULT 'default' REFERENCES warehouses(id) ON DELETE CASCADE,
     category TEXT DEFAULT 'أدوية',
     description TEXT,
     supplier TEXT,

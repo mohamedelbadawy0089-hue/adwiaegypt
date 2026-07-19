@@ -182,13 +182,8 @@
             },
             {
                 keys: ['دليفري', 'توصيل', 'رجل دليفري', 'اضف دليفري', 'ازاي اضيف دليفري', 'عايز اضيف موصل'],
-                answer: 'لإضافة رجل دليفري: اذهب لصفحة إدارة الدليفري، أدخل الاسم ورقم التليفون، اضغط إضافة. يمكنك أيضاً إضافة رقم موظف التحضير من نفس الصفحة.',
-                action: () => { location.href = 'delivery.html'; }
-            },
-            {
-                keys: ['موظف', 'تيلي سيلز', 'اضف موظف', 'موظف جديد', 'ازاي اضيف موظف', 'عايز اضيف موظف'],
-                answer: 'لإضافة موظف تيلي سيلز: اذهب للوحة تحكم المدير، أدخل اسم الموظف وباسورده، اضغط إضافة موظف. سيدخل الموظف بإيميلك وباسورده الخاص.',
-                action: () => { location.href = 'admin-dashboard.html'; }
+                answer: 'لإضافة رجل دليفري: اذهب لصفحة ملف المنتجات وانزل لقسم إدارة الدليفري، أدخل الاسم ورقم التليفون، اضغط إضافة. يمكنك أيضاً إضافة رقم موظف التحضير من نفس القسم.',
+                action: () => { location.href = 'products.html'; }
             },
             {
                 keys: ['طباعة', 'طبع', 'print', 'مشكلة طباعة', 'ازاي اطبع', 'عايز اطبع', 'الطباعة مش شغالة'],
@@ -668,7 +663,8 @@
                 const qtyMatch = input.match(/(\d+)/);
                 result.data.quantity = qtyMatch ? parseInt(qtyMatch[1]) : 1;
                 
-                let name = input.replace(/(ضيف|حط|زود|نزل|اضف|إضف|أضف|اضيف|اضافة|إضافة|ادخال|إدخال|دخل|هات|سجله|للاوردر|للأوردر|اوردر|أوردر|إوردر|الاوردر|الأوردر|الطلب|طلب|للطلب|في|على|لـ|ع|علبة|علب|شريط|قطعة|قطع|كبسولة|كبسول|حبة|حبات|من|منتج|منتجات|المنتج|المنتجات)/gi, ' ');
+                // Enhanced name cleaning for medicines
+                let name = input.replace(/(ضيف|حط|زود|نزل|اضف|إضف|أضف|اضيف|اضافة|إضافة|ادخال|إدخال|دخل|هات|سجله|للاوردر|للأوردر|اوردر|أوردر|إوردر|الاوردر|الأوردر|الطلب|طلب|للطلب|في|على|لـ|ع|علبة|علب|شريط|شرايط|قطعة|قطع|كبسولة|كبسولات|كبسول|حبة|حبات|من|منتج|منتجات|المنتج|المنتجات)/gi, ' ');
                 name = name.replace(/\d+/g, ' ').replace(/\s+/g, ' ').trim();
                 name = name.replace(/^[وب]\s*/, '').trim();
                 
@@ -679,13 +675,11 @@
 
             // 1.1 دعم الإدخال السريع في صفحة الأوردر (كمية + اسم) بدون كلمات أمر
             if (isOrderPage) {
-                // نمط مرن جداً للأوردر: ابحث عن أي رقم في الجملة واعتبر الباقي هو اسم المنتج
                 const qtyMatch = input.match(/(\d+)/);
                 if (qtyMatch) {
                     const foundQty = parseInt(qtyMatch[1]);
-                    // استخراج الاسم بحذف الرقم وأي كلمات ضوضاء
                     let potentialName = input.replace(/\d+/g, ' ');
-                    potentialName = potentialName.replace(/(علبة|علب|شريط|قطعة|قطع|كبسولة|كبسول|حبة|حبات|من|وب|و|يا|لو|سمحت|ممكن)/gi, ' ').trim();
+                    potentialName = potentialName.replace(/(علبة|علب|شريط|شرايط|قطعة|قطع|كبسولة|كبسولات|كبسول|حبة|حبات|من|وب|و|يا|لو|سمحت|ممكن)/gi, ' ').trim();
                     
                     if (potentialName.length >= 2) {
                         result.type = 'addToOrder';
@@ -698,10 +692,8 @@
             }
 
             // 2. التحقق من نية "إنشاء منتج جديد" أو إدخال بيانات منتج
-            const createPattern = /(ضيف\s*منتج|منتج\s*جديد|[إاأ]?ض[اي]ف[ةه]?\s*منتج|[إاأ]?ضف\s*منتج|إضافة\s*منتج|اضافة\s*منتج|ادخال\s*منتج|إدخال\s*منتج)/i;
+            const createPattern = /(ضيف\s*منتج|منتج\s*جديد|[إاأ]?ض[اي]ف[ةه]?\s*منتج|[إاأ]?ضف\s*منتج|إضافة\s*منتج|اضافة\s*منتج|ادخال\s*منتج|إدخال\s*منتج|سجل\s*منتج)/i;
             
-            // استباق استخراج الكيانات (Entities) قبل فحص النمط الرئيسي للسماح بالإدخال "بدون ذكر كلمات مفتاحية"
-            // دعم العامية: جني، قني، ج، تمنه، عامله، واقف بـ، بتاع
             const priceRegex = /(\d+(?:\.\d+)?)\s*(?:جني[هة]|قني[هة]|ج)/;
             const priceMatch = input.match(/(?:سعر[هها]?|بكام|بـ|ب|تمن[هها]?|عامله|واقف\s*بـ|بتاع)\s*(\d+(?:\.\d+)?)/) || input.match(priceRegex);
             
@@ -716,7 +708,6 @@
                 let m = dMatch[2].padStart(2, '0');
                 let y = dMatch[3];
                 if (y.length === 2) y = "20" + y;
-                // التحقق من صحة الأرقام (يوم 1-31، شهر 1-12)
                 const dd = parseInt(d);
                 const mm = parseInt(m);
                 if (dd > 0 && dd <= 31 && mm > 0 && mm <= 12) {
@@ -724,7 +715,6 @@
                 }
             }
 
-            // تحديد النوايا: إذا وجد نمط الإضافة الصريح، أو إذا وجدنا سعر/خصم/تاريخ مع اسم في صفحة المنتجات
             const hasEntities = priceMatch || discountMatch || foundDates.length > 0;
             const isIntentionalCreate = createPattern.test(input) || (isAddProductPage && hasEntities);
 
@@ -739,13 +729,12 @@
                     result.data.discount = discountMatch[1] || discountMatch[0].match(/\d+(?:\.\d+)?/)[0];
                 }
                 
-                const qtyMatch = input.match(/(?:كمي[تة][هها]?|الكمي[ةه]|عدد)\s*(\d+)/) || input.match(/^(\d+)\s/);
+                const qtyMatch = input.match(/(?:كمي[تة][هها]?|الكمي[ةه]|عدد)\s*(\d+)/) || input.match(/\s(\d+)\s*(علب|علبة|شريط|قطعة)/) || input.match(/^(\d+)\s/);
                 if (qtyMatch) result.data.quantity = qtyMatch[1];
                 
                 if (foundDates.length >= 2) {
                     let d1 = foundDates[0];
                     let d2 = foundDates[1];
-                    // تصحيح تلقائي ذكي: إذا كان الأول أكبر من الثاني (تاريخ إنتاج بعد انتهاء)
                     if (new Date(d1) > new Date(d2)) {
                         result.data.productionDate = d2;
                         result.data.expiryDate = d1;
@@ -765,7 +754,7 @@
                     /(?:خصم[هها]?)\s*\d+/, 
                     percentRegex,
                     /(?:كمي[تة][هها]?|الكمي[ةه]|عدد)\s*\d+/,
-                    /(\d{1,2})[/\-.\s]+(\d{1,2})[/\-.\s]+(\d{2,4})/ // التواريخ
+                    /(\d{1,2})[/\-.\s]+(\d{1,2})[/\-.\s]+(\d{2,4})/
                 ];
                 stops.forEach(pattern => {
                     const match = namePart.match(pattern);
@@ -774,9 +763,7 @@
                     }
                 });
                 
-                // تنظيف الاسم من كل الكلمات الوظيفية والرموز والتواريخ والعامية
-                namePart = namePart.replace(/(ضيف|[إاأ]?ض[اي]ف[ةه]?|[إاأ]?ضف|إضافة|اضافة|ادخال|إدخال|دخل|منتج|جديد|اسم[هها]?|سعر[هها]?|تمن[هها]?|عامله|واقف\s*بـ|بتاع|جني[هة]|قني[هة]|ج|%|٪|بالم[يى][هة]|ف[يى]\s*الم[يى][هة]|بالمائ[ةه]|ف[يى]\s*المائ[ةه]|\d{1,2}[/\-.\s]+\d{1,2}[/\-.\s]+\d{2,4})/gi, ' ');
-                // إزالة الكمية في بداية الجملة إذا تم استخراجها ككمية
+                namePart = namePart.replace(/(ضيف|[إاأ]?ض[اي]ف[ةه]?|[إاأ]?ضف|إضافة|اضافة|ادخال|إدخال|دخل|سجل|منتج|جديد|اسم[هها]?|سعر[هها]?|تمن[هها]?|عامله|واقف\s*بـ|بتاع|جني[هة]|قني[هة]|ج|%|٪|بالم[يى][هة]|ف[يى]\s*الم[يى][هة]|بالمائ[ةه]|ف[يى]\s*المائ[ةه]|\d{1,2}[/\-.\s]+\d{1,2}[/\-.\s]+\d{2,4})/gi, ' ');
                 if (qtyMatch && input.startsWith(qtyMatch[1])) {
                     namePart = namePart.replace(new RegExp('^' + qtyMatch[1]), '');
                 }
@@ -784,8 +771,6 @@
                 namePart = namePart.replace(/^[وب]\s*/, '').trim();
                 
                 result.data.productName = namePart;
-                
-                // التحقق من الأخطاء المنطقية وتقديم الحلول
                 result.validation = this.checkLogicalErrors(result.data);
                 return result;
             }
@@ -1550,13 +1535,13 @@
         
         // قاموس مرادفات الصناعة الصيدلية
         pharmacySynonyms: {
-            productName: ['اسم المنتج', 'اسم الصنف', 'الصنف', 'المنتج', 'اسم الدواء', 'item name', 'product name', 'description', 'medicine name', 'صنف', 'الاسم'],
-            price: ['السعر', 'سعر الجمهور', 'سعر البيع', 'ثمن', 'سعر المستهلك', 'price', 'public price', 'selling price', 'rate', 'unit price', 'تمن'],
-            discount: ['خصم', 'نسبة الخصم', 'الخصم', 'تخفيض', 'discount', 'disc%', 'discount rate', 'الخصوووم'],
-            quantity: ['الكمية', 'كمية', 'رصيد', 'المخزون', 'الرصيد المتاح', 'عدد', 'quantity', 'qty', 'stock', 'available', 'balance', 'count', 'رصيدك'],
-            expiryDate: ['تاريخ الانتهاء', 'تاريخ الصلاحية', 'انتهاء', 'صلاحية', 'تاريخ النفاذ', 'expiry date', 'exp date', 'expir', 'valid until', 'التاريخ', 'اكسباير'],
-            productionDate: ['تاريخ الإنتاج', 'تاريخ الصنع', 'الإنتاج', 'صنع في', 'production date', 'mfg date', 'mfd', 'prod date'],
-            barcode: ['باركود', 'كود الصنف', 'كود', 'رقم المنتج', 'barcode', 'code', 'item code', 'ean', 'upc']
+            productName: ['اسم المنتج', 'اسم الصنف', 'الصنف', 'المنتج', 'اسم الدواء', 'item name', 'product name', 'description', 'medicine name', 'صنف', 'الاسم', 'الاسم التجارى', 'البيان', 'اسم المادة', 'Medicine', 'Drug', 'اسم الدواء/الصنف'],
+            price: ['السعر', 'سعر الجمهور', 'سعر البيع', 'ثمن', 'سعر المستهلك', 'price', 'public price', 'selling price', 'rate', 'unit price', 'تمن', 'السعر للجمهور', 'سعر العلبة', 'Consumer Price', 'سعر'],
+            discount: ['خصم', 'نسبة الخصم', 'الخصم', 'تخفيض', 'discount', 'disc%', 'discount rate', 'الخصوووم', 'تخفيض %'],
+            quantity: ['الكمية', 'كمية', 'رصيد', 'المخزون', 'الرصيد المتاح', 'عدد', 'quantity', 'qty', 'stock', 'available', 'balance', 'count', 'رصيدك', 'الرصيد الحالى', 'الكمية المتاحة', 'العلب', 'Stock Qty', 'الكمية الحالية'],
+            expiryDate: ['تاريخ الانتهاء', 'تاريخ الصلاحية', 'انتهاء', 'صلاحية', 'تاريخ النفاذ', 'expiry date', 'exp date', 'expir', 'valid until', 'التاريخ', 'اكسباير', 'نهاية الصلاحية', 'Expiry', 'Valid To', 'تاريخ الصلاحيه', 'الصلاحية'],
+            productionDate: ['تاريخ الإنتاج', 'تاريخ الصنع', 'الإنتاج', 'صنع في', 'production date', 'mfg date', 'mfd', 'prod date', 'تاريخ الانتاج'],
+            barcode: ['باركود', 'كود الصنف', 'كود', 'رقم المنتج', 'barcode', 'code', 'item code', 'ean', 'upc', 'باركود الصنف', 'الباركود']
         },
 
         // بصمات البرامج الشهيرة
@@ -1568,6 +1553,94 @@
         ],
 
         // الخرائط الذكية للأعمدة
+        // محرك اللصق الذكي (Smart Paste Engine)
+        smartParsePaste: function(text) {
+            if (!text) return null;
+            
+            const result = {
+                productName: '',
+                price: null,
+                quantity: null,
+                discount: 0,
+                expiryDate: null,
+                barcode: null
+            };
+
+            // 1. تنظيف النص وتقسيمه
+            let cleanText = text.trim();
+            
+            // 2. استخراج التاريخ (بحث عن نمط التاريخ)
+            const datePatterns = [
+                /\d{4}-\d{1,2}-\d{1,2}/,  // 2024-01-01
+                /\d{1,2}\/\d{1,2}\/\d{4}/,  // 01/01/2024
+                /\d{1,2}\/\d{2,4}/,         // 01/2026 or 01/26
+                /\d{1,2}-\d{2,4}/           // 01-2026
+            ];
+            
+            for (let pattern of datePatterns) {
+                const match = cleanText.match(pattern);
+                if (match) {
+                    result.expiryDate = match[0];
+                    cleanText = cleanText.replace(match[0], ' ');
+                    break;
+                }
+            }
+
+            // 3. استخراج الباركود (رقم طويل 8-14 رقم)
+            const barcodeMatch = cleanText.match(/\d{8,14}/);
+            if (barcodeMatch) {
+                result.barcode = barcodeMatch[0];
+                cleanText = cleanText.replace(barcodeMatch[0], ' ');
+            }
+
+            // 4. تقسيم ما تبقى من النص
+            const parts = cleanText.split(/[\s,;|\t]+/).filter(p => p.trim());
+            const numbers = [];
+            const words = [];
+
+            parts.forEach(part => {
+                const num = parseFloat(part);
+                if (!isNaN(num) && /^\d+(\.\d+)?$/.test(part)) {
+                    numbers.push(num);
+                } else {
+                    words.push(part);
+                }
+            });
+
+            // 5. تعيين الاسم (الكلمات المتبقية)
+            result.productName = words.join(' ').trim();
+
+            // 6. تعيين الأرقام (السعر والكمية والخصم)
+            // السعر عادة يكون فيه فواصل عشرية أو هو الرقم الأكبر
+            if (numbers.length > 0) {
+                // ترتيب الأرقام: السعر عادة أكبر من الكمية في الأدوية
+                // أو إذا وجدنا رقم عشري فهو السعر
+                const decimalNum = numbers.find(n => n.toString().includes('.'));
+                if (decimalNum) {
+                    result.price = decimalNum;
+                    numbers.splice(numbers.indexOf(decimalNum), 1);
+                } else {
+                    // نأخذ أكبر رقم كالسعر (افتراض صيدلاني)
+                    const max = Math.max(...numbers);
+                    result.price = max;
+                    numbers.splice(numbers.indexOf(max), 1);
+                }
+            }
+
+            if (numbers.length > 0) {
+                // الرقم التالي هو الكمية
+                result.quantity = numbers[0];
+                numbers.shift();
+            }
+
+            if (numbers.length > 0) {
+                // الرقم الثالث هو الخصم
+                result.discount = numbers[0];
+            }
+
+            return result;
+        },
+
         smartMapHeaders: function(headers) {
             const map = { productName: -1, price: -1, discount: -1, quantity: -1, productionDate: -1, expiryDate: -1, barcode: -1 };
             const detectedSoftware = { name: 'ملف مخصص', confidence: 0 };

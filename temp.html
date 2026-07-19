@@ -188,7 +188,7 @@
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
         
         if (!currentUser) {
-            windirectTestBtnow.location.replace('login.html');
+            windirectTestBtnow.if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
         }
         
         let directTestBtnb;

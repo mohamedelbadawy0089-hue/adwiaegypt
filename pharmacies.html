@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدارة الصيدليات</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="navigation.js"></script>
+    <script src="supabase-singleton.js"></script>
+    <script src="sidebar.js"></script>
     <style>
         body {
             margin: 0;
@@ -387,6 +390,155 @@
         .empty-text {
             font-size: 18px;
         }
+        /* Gemini Voice UI Integration */
+        .search-box { position: relative; }
+        .search-box input { padding-right: 60px !important; }
+        
+        .gemini-mic-container {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .gemini-mic-btn {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(79, 172, 254, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-right: 5px;
+        }
+
+        .gemini-mic-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(79, 172, 254, 0.6);
+        }
+
+        .gemini-mic-btn.listening {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            animation: gemini-breath 1.5s infinite;
+        }
+
+        .gemini-waves-container {
+            position: absolute;
+            right: 55px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            align-items: center;
+            gap: 3px;
+            height: 20px;
+        }
+
+        .gemini-mic-btn.listening + .gemini-waves-container {
+            display: flex;
+        }
+
+        .gemini-wave {
+            width: 3px;
+            height: 8px;
+            background: #00f2fe;
+            border-radius: 3px;
+            animation: gemini-wave-anim 1s ease-in-out infinite;
+        }
+
+        .gemini-wave:nth-child(2) { animation-delay: 0.1s; }
+        .gemini-wave:nth-child(3) { animation-delay: 0.2s; }
+        .gemini-wave:nth-child(4) { animation-delay: 0.3s; }
+        .gemini-wave:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes gemini-breath {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(240, 147, 251, 0.8); }
+        }
+
+        @keyframes gemini-wave-anim {
+            0%, 100% { height: 6px; opacity: 0.5; }
+            50% { height: 18px; opacity: 1; }
+        }
+
+        #speechBubble {
+            position: absolute;
+            bottom: 65px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: none;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        #speechBubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            right: 20px;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid rgba(0, 0, 0, 0.85);
+        }
+        .main-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .main-tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: #f0f2f5;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .main-tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .main-tab-content {
+            display: none;
+        }
+        .main-tab-content.active {
+            display: block;
+        }
+        .btn-add-global {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 5px;
+            transition: background 0.3s;
+        }
+        .btn-add-global:hover {
+            background: #218838;
+        }
     </style>
 </head>
 <body>
@@ -398,7 +550,11 @@
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-number" id="pharmacyCount">0</div>
-                <div class="stat-label">إجمالي الصيدليات</div>
+                <div class="stat-label">صيدليات المخزن الحالية</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="stat-number" id="globalPharmacyCount">80k+</div>
+                <div class="stat-label">متاحة في الدليل العام</div>
             </div>
         </div>
         
@@ -427,14 +583,6 @@
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <label>العنوان <span class="required">*</span></label>
                             <textarea id="pharmacyAddress" oninput="checkFormValidity()" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>المدينة أو المحافظة <span class="required">*</span></label>
-                            <input type="text" id="pharmacyProvince" oninput="checkFormValidity()" required>
-                        </div>
-                        <div class="form-group">
-                            <label>معرف الصيدلية (ID) <span class="required">*</span></label>
-                            <input type="text" id="pharmacyId" oninput="checkFormValidity()" required>
                         </div>
                         <div class="form-group">
                             <label>موقع GPS (اختياري)</label>
@@ -487,80 +635,79 @@
                             <div id="previewTable"></div>
                         </div>
                         
-                        <div class="bulk-actions">
-                            <button type="button" class="btn btn-add" onclick="processBulkImport()" id="importBtn" disabled>استيراد الصيدليات</button>
-                            <button type="button" class="btn btn-cancel" onclick="cancelBulkImport()">إلغاء</button>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 ابحث عن صيدلية بالاسم أو التليفون أو العنوان... (Ctrl+F)" oninput="filterPharmacies()">
-        </div>
-        
-        <div class="table-hint">
-            💡 <strong>نصيحة:</strong> استخدم الأسهم ↑ ↓ للتنقل بين الصيدليات | اضغط Enter لإنشاء أوردر سريع
-        </div>
-        
-        <div class="table-container">
-            <table id="pharmaciesTable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>اسم الصيدلية</th>
-                        <th>رقم التليفون</th>
-                        <th>العنوان</th>
-                        <th>GPS</th>
-                        <th>تاريخ الإضافة</th>
-                        <th>إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="pharmaciesBody"></tbody>
-            </table>
             
-            <div class="empty-state" id="emptyState">
-                <div class="empty-icon">🏥</div>
-                <div class="empty-text">لا توجد صيدليات مسجلة حالياً</div>
-            </div>
         </div>
+        
+        <div id="myPharmaciesContent">
+            <h3 style="margin-top: 20px; color: #764ba2;">📋 الصيدليات المدخلة (خاصة بالمخزن)</h3>
+            <div class="search-box">
     </div>
 
     <script>
-        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        if (!currentUser) { window.location.replace('login.html'); }
-        
-        let db;
+        let currentUser = null;
+        let currentWarehouseId = null;
         let allPharmacies = [];
         let bulkData = [];
         let fileHeaders = [];
-        
-        function initDB() {
-            const request = indexedDB.open('WarehouseDB', 5);
+
+        async function initAuth() {
+            // ✅ تصفير الـ LocalStorage من أي بيانات قديمة فوراً
+            localStorage.removeItem('pharmacies');
+            localStorage.removeItem('products');
+            localStorage.removeItem('offline_pharmacies');
+            localStorage.removeItem('SalamtakDB_products');
             
-            request.onupgradeneeded = function(e) {
-                db = e.target.result;
-                
-                if (!db.objectStoreNames.contains('pharmacies')) {
-                    const objectStore = db.createObjectStore('pharmacies', { keyPath: 'id', autoIncrement: true });
-                    objectStore.createIndex('userId', 'userId', { unique: false });
-                    objectStore.createIndex('pharmacyName', 'pharmacyName', { unique: false });
+            if (window.SupabaseSingleton) {
+                const session = await window.SupabaseSingleton.SessionManager.checkSession();
+                if (session) {
+                    currentUser = session.user;
+                    currentWarehouseId = session.user.user_metadata?.warehouse_id || sessionStorage.getItem('current_warehouse_id');
+                } else {
+                    window.location.replace('login.html');
                 }
-            };
+            }
+        }
+        
+        async function getSupabase() {
+            if (window.supabaseClient) return window.supabaseClient;
+            if (window.SupabaseSingleton) {
+                const client = await window.SupabaseSingleton.getClient();
+                if (client) return client;
+            }
+            if (window.supabase) return window.supabase;
+            return null;
+        }
+
+        async function initPage() {
+            console.log('🚀 تهيئة الصفحة والربط بـ Supabase...');
+            await initAuth();
+            await loadPharmacies();
+            await fetchGlobalCount();
+            await initGlobalSearch(); // تهيئة الدليل العام فوراً لأنه أصبح مرئياً
             
-            request.onsuccess = function() {
-                db = request.result;
-                console.log('IndexedDB connected successfully');
-                loadPharmacies();
-            };
-            
-            request.onerror = function(e) {
-                console.error('IndexedDB error:', e);
-                console.log('Falling back to localStorage');
-                db = null;
-                loadPharmaciesFromLocalStorage();
-            };
+            // تحديث العداد كل 30 ثانية ليعكس تقدم عملية السحب
+            setInterval(fetchGlobalCount, 30000);
+        }
+
+        async function fetchGlobalCount() {
+            try {
+                const supabase = await getSupabase();
+                if (!supabase) return;
+                
+                // جلب العدد الإجمالي من الدليل العام
+                const { count, error } = await supabase
+                    .from('egypt_pharmacies_static')
+                    .select('*', { count: 'exact', head: true });
+                
+                if (error) throw error;
+                if (count) {
+                    document.getElementById('globalPharmacyCount').textContent = count.toLocaleString('ar-EG');
+                }
+            } catch (err) {
+                console.warn('Could not fetch global count:', err);
+            }
         }
         
         function validatePhone() {
@@ -589,7 +736,7 @@
             }
         }
         
-        function handleSubmit(event) {
+        async function handleSubmit(event) {
             event.preventDefault();
             
             const name = document.getElementById('pharmacyName').value.trim();
@@ -598,56 +745,41 @@
             const gpsLat = document.getElementById('gpsLat').value.trim();
             const gpsLng = document.getElementById('gpsLng').value.trim();
             
-            console.log('Form submitted:', { name, phone, address });
-            
             if (!name || phone.length !== 11 || !address) {
                 alert('يرجى إدخال جميع البيانات بشكل صحيح');
                 return;
             }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ جاري الحفظ...';
             
-            const pharmacyData = {
-                id: Date.now(),
-                userId: currentUser.email,
-                warehouseName: currentUser.warehouseName,
-                pharmacyName: name,
-                pharmacyPhone: phone,
-                pharmacyAddress: address,
-                pharmacyGPS: (gpsLat && gpsLng) ? { lat: parseFloat(gpsLat), lng: parseFloat(gpsLng) } : null,
-                createdAt: new Date().toISOString()
-            };
-            
-            console.log('Pharmacy data:', pharmacyData);
-            
-            // حفظ في localStorage أولاً
-            const pharmacies = JSON.parse(localStorage.getItem('pharmacies')) || [];
-            pharmacies.push(pharmacyData);
-            localStorage.setItem('pharmacies', JSON.stringify(pharmacies));
-            console.log('Saved to localStorage, total pharmacies:', pharmacies.length);
-            
-            // محاولة حفظ في IndexedDB
-            if (db) {
-                try {
-                    const transaction = db.transaction(['pharmacies'], 'readwrite');
-                    const objectStore = transaction.objectStore('pharmacies');
-                    const request = objectStore.add(pharmacyData);
-                    
-                    request.onsuccess = function() {
-                        console.log('Added to IndexedDB successfully');
-                    };
-                    
-                    request.onerror = function() {
-                        console.error('IndexedDB add error:', request.error);
-                    };
-                } catch (error) {
-                    console.error('IndexedDB error:', error);
-                }
+            try {
+                const supabase = await getSupabase();
+                if (!supabase) throw new Error('الاتصال بالسيرفر غير متوفر');
+
+                const { data, error } = await supabase.from('warehouse_pharmacies').insert([{
+                    name: name,
+                    phone: phone,
+                    address: address,
+                    warehouse_id: currentWarehouseId,
+                    user_id: currentUser.email,
+                    gps_location: (gpsLat && gpsLng) ? { lat: parseFloat(gpsLat), lng: parseFloat(gpsLng) } : null
+                }]).select();
+
+                if (error) throw error;
+
+                alert('✅ تم إضافة الصيدلية بنجاح');
+                resetForm();
+                await loadPharmacies();
+            } catch (error) {
+                console.error('Submit error:', error);
+                alert('❌ خطأ في الحفظ: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
-            
-            alert('تم إضافة الصيدلية بنجاح');
-            resetForm();
-            
-            // إعادة تحميل البيانات
-            loadPharmaciesFromLocalStorage();
         }
         
         function resetForm() {
@@ -660,102 +792,73 @@
             document.getElementById('phoneError').style.display = 'none';
         }
         
-        function loadPharmacies() {
-            console.log('Loading pharmacies...');
+        async function loadPharmacies() {
+            console.log('📦 جلب الصيدليات من السيرفر...');
+            const table = document.getElementById('pharmaciesTable');
+            const emptyState = document.getElementById('emptyState');
             
-            // Always load from localStorage first
-            loadPharmaciesFromLocalStorage();
-            
-            // Then try to sync with IndexedDB if available
-            if (db) {
-                try {
-                    const transaction = db.transaction(['pharmacies'], 'readonly');
-                    const objectStore = transaction.objectStore('pharmacies');
-                    const index = objectStore.index('userId');
-                    const request = index.getAll(currentUser.email);
-                    
-                    request.onsuccess = function() {
-                        const dbPharmacies = request.result || [];
-                        console.log('Loaded from IndexedDB:', dbPharmacies.length);
-                        
-                        // Merge with localStorage data (avoid duplicates)
-                        const localPharmacies = JSON.parse(localStorage.getItem('pharmacies')) || [];
-                        const userLocalPharmacies = localPharmacies.filter(p => p.userId === currentUser.email);
-                        
-                        // Combine both sources
-                        const combinedPharmacies = [...userLocalPharmacies];
-                        
-                        dbPharmacies.forEach(dbPharmacy => {
-                            const exists = combinedPharmacies.find(p => 
-                                p.pharmacyName === dbPharmacy.pharmacyName && 
-                                p.pharmacyPhone === dbPharmacy.pharmacyPhone
-                            );
-                            if (!exists) {
-                                combinedPharmacies.push(dbPharmacy);
-                            }
-                        });
-                        
-                        allPharmacies = combinedPharmacies;
-                        displayPharmacies(allPharmacies);
-                    };
-                    
-                    request.onerror = function() {
-                        console.error('Error loading from IndexedDB');
-                        loadPharmaciesFromLocalStorage();
-                    };
-                } catch (error) {
-                    console.error('IndexedDB transaction error:', error);
-                    loadPharmaciesFromLocalStorage();
-                }
+            try {
+                const supabase = await getSupabase();
+                if (!supabase) return;
+
+                const { data, error } = await supabase
+                    .from('warehouse_pharmacies')
+                    .select('*')
+                    .eq('warehouse_id', currentWarehouseId)
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                allPharmacies = data || [];
+                displayPharmacies(allPharmacies);
+            } catch (error) {
+                console.error('Load error:', error);
+                displayPharmacies([]);
             }
-        }
-        
-        function loadPharmaciesFromLocalStorage() {
-            console.log('Loading from localStorage...');
-            const pharmacies = JSON.parse(localStorage.getItem('pharmacies')) || [];
-            console.log('All pharmacies in localStorage:', pharmacies.length);
-            
-            allPharmacies = pharmacies.filter(p => p.userId === currentUser.email);
-            console.log('User pharmacies:', allPharmacies.length);
-            
-            displayPharmacies(allPharmacies);
         }
         
         function displayPharmacies(pharmacies) {
             document.getElementById('pharmacyCount').textContent = pharmacies.length;
+            const table = document.getElementById('pharmaciesTable');
+            const emptyState = document.getElementById('emptyState');
             
             if (pharmacies.length === 0) {
-                document.getElementById('pharmaciesTable').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
+                table.style.display = 'none';
+                emptyState.style.display = 'block';
                 return;
             }
             
-            document.getElementById('pharmaciesTable').style.display = 'table';
-            document.getElementById('emptyState').style.display = 'none';
+            table.style.display = 'table';
+            emptyState.style.display = 'none';
             
             const tbody = document.getElementById('pharmaciesBody');
             tbody.innerHTML = '';
             
-            pharmacies.forEach((pharmacy, index) => {
-                const date = new Date(pharmacy.createdAt).toLocaleDateString('ar-EG');
+            pharmacies.forEach((p, index) => {
+                const date = new Date(p.created_at || p.createdAt).toLocaleDateString('ar-EG');
                 
                 let gpsLink = '-';
-                if (pharmacy.pharmacyGPS && pharmacy.pharmacyGPS.lat && pharmacy.pharmacyGPS.lng) {
-                    const gpsUrl = `https://www.google.com/maps?q=${pharmacy.pharmacyGPS.lat},${pharmacy.pharmacyGPS.lng}`;
+                const gps = p.gps_location || p.pharmacyGPS;
+                if (gps && gps.lat && gps.lng) {
+                    const gpsUrl = `https://www.google.com/maps?q=${gps.lat},${gps.lng}`;
                     gpsLink = `<a href="${gpsUrl}" target="_blank" style="color: #667eea; font-weight: bold;">📍 عرض</a>`;
                 }
                 
+                const pName = p.name || p.pharmacyName;
+                const pPhone = p.phone || p.pharmacyPhone;
+                const pAddress = p.address || p.pharmacyAddress;
+
                 const row = `
-                    <tr data-pharmacy-id="${pharmacy.id || index}" class="pharmacy-row" tabindex="0">
+                    <tr data-pharmacy-id="${p.id}" class="pharmacy-row" tabindex="0">
                         <td>${index + 1}</td>
-                        <td><strong><a href="#" onclick="viewPharmacyProfile(${pharmacy.id || index})" style="color: #667eea; text-decoration: none; font-weight: bold;">${pharmacy.pharmacyName}</a></strong></td>
-                        <td><a href="tel:${pharmacy.pharmacyPhone}" style="color: #28a745; font-weight: bold; text-decoration: none;">📞 ${pharmacy.pharmacyPhone}</a></td>
-                        <td>${pharmacy.pharmacyAddress}</td>
+                        <td><strong><a href="#" onclick="viewPharmacyProfile('${p.id}')" style="color: #667eea; text-decoration: none; font-weight: bold;">${pName}</a></strong></td>
+                        <td><a href="tel:${pPhone}" style="color: #28a745; font-weight: bold; text-decoration: none;">📞 ${pPhone}</a></td>
+                        <td>${pAddress}</td>
                         <td>${gpsLink}</td>
                         <td>${date}</td>
                         <td>
-                            <button class="btn-order" onclick="createOrderForPharmacy(${pharmacy.id || index})">📋 أوردر</button>
-                            <button class="btn-delete" onclick="deletePharmacy(${pharmacy.id || index})">حذف</button>
+                            <button class="btn-order" onclick="createOrderForPharmacy('${p.id}')">📋 أوردر</button>
+                            <button class="btn-delete" onclick="deletePharmacy('${p.id}')">حذف</button>
                         </td>
                     </tr>
                 `;
@@ -766,24 +869,38 @@
                 row.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         var pharmacyId = this.getAttribute('data-pharmacy-id');
-                        createOrderForPharmacy(parseInt(pharmacyId));
+                        createOrderForPharmacy(pharmacyId);
                     }
                 });
             });
         }
         
-        function filterPharmacies() {
-            var searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            // بحث فوري وسريع
-            var filtered = allPharmacies.filter(function(p) {
-                return p.pharmacyName.toLowerCase().indexOf(searchTerm) !== -1 ||
-                       p.pharmacyPhone.indexOf(searchTerm) !== -1 ||
-                       p.pharmacyAddress.toLowerCase().indexOf(searchTerm) !== -1;
-            });
-            displayPharmacies(filtered);
+        async function filterPharmacies() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) {
+                await loadPharmacies();
+                return;
+            }
+
+            console.log('🔍 بحث مباشر في صيدلياتك على السيرفر...');
+            try {
+                const supabase = await getSupabase();
+                if (!supabase) return;
+
+                const { data, error } = await supabase
+                    .from('warehouse_pharmacies')
+                    .select('*')
+                    .eq('warehouse_id', currentWarehouseId)
+                    .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%`)
+                    .order('name', { ascending: true });
+
+                if (error) throw error;
+                displayPharmacies(data || []);
+            } catch (error) {
+                console.error('Search error:', error);
+            }
         }
         
-        // تركيز تلقائي على حقل البحث عند تحميل الصفحة ومعالجة الاستعلام من الرابط
         window.addEventListener('load', function() {
             var searchInput = document.getElementById('searchInput');
             searchInput.focus();
@@ -796,9 +913,10 @@
                 var event = new Event('input', { bubbles: true });
                 searchInput.dispatchEvent(event);
             }
+            
+            initPage();
         });
         
-        // اختصار لوحة المفاتيح: Ctrl+F للبحث
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                 e.preventDefault();
@@ -830,94 +948,65 @@
         });
         
         function createOrderForPharmacy(pharmacyId) {
-            const pharmacy = allPharmacies.find(p => p.id === pharmacyId);
+            const pharmacy = allPharmacies.find(p => p.id == pharmacyId);
             if (!pharmacy) {
                 alert('لم يتم العثور على الصيدلية');
                 return;
             }
             
-            // حفظ الصيدلية المختارة في sessionStorage
-            sessionStorage.setItem('selectedPharmacy', JSON.stringify(pharmacy));
-            
-            // الانتقال إلى صفحة إنشاء الأوردر
+            const pData = {
+                id: pharmacy.id,
+                pharmacyName: pharmacy.name || pharmacy.pharmacyName,
+                pharmacyPhone: pharmacy.phone || pharmacy.pharmacyPhone,
+                pharmacyAddress: pharmacy.address || pharmacy.pharmacyAddress,
+                pharmacyGPS: pharmacy.gps_location || pharmacy.pharmacyGPS
+            };
+
+            sessionStorage.setItem('selectedPharmacy', JSON.stringify(pData));
             window.location.href = 'create-order.html';
         }
         
-        function deletePharmacy(pharmacyId) {
-            if (!confirm('هل أنت متأكد من حذف هذه الصيدلية؟')) return;
+        async function deletePharmacy(pharmacyId) {
+            if (!confirm('هل أنت متأكد من حذف هذه الصيدلية من السيرفر؟')) return;
             
-            console.log('حذف الصيدلية بمعرف:', pharmacyId);
-            
-            // الحذف من localStorage
-            var pharmacies = JSON.parse(localStorage.getItem('pharmacies')) || [];
-            console.log('عدد الصيدليات قبل الحذف:', pharmacies.length);
-            
-            // البحت عن الصيدلية بالمعرف
-            var pharmacyIndex = pharmacies.findIndex(function(p) {
-                return p.userId === currentUser.email && (p.id === pharmacyId || String(p.id) === String(pharmacyId));
-            });
-            
-            console.log('فهرس الصيدلية:', pharmacyIndex);
-            
-            if (pharmacyIndex !== -1) {
-                pharmacies.splice(pharmacyIndex, 1);
-                localStorage.setItem('pharmacies', JSON.stringify(pharmacies));
-                console.log('تم الحذف من localStorage');
-            } else {
-                console.log('لم يتم العثور على الصيدلية في localStorage');
+            try {
+                const supabase = await getSupabase();
+                if (!supabase) throw new Error('الاتصال بالسيرفر غير متوفر');
+
+                const { error } = await supabase
+                    .from('warehouse_pharmacies')
+                    .delete()
+                    .eq('id', pharmacyId)
+                    .eq('warehouse_id', currentWarehouseId);
+
+                if (error) throw error;
+                
+                alert('✅ تم الحذف بنجاح');
+                await loadPharmacies();
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('❌ فشل الحذف: ' + error.message);
             }
-            
-            // الحذف من IndexedDB إذا كان متاحاً
-            if (db) {
-                try {
-                    var transaction = db.transaction(['pharmacies'], 'readwrite');
-                    var objectStore = transaction.objectStore('pharmacies');
-                    var request = objectStore.delete(pharmacyId);
-                    
-                    request.onsuccess = function() {
-                        console.log('تم الحذف من IndexedDB');
-                    };
-                    
-                    request.onerror = function() {
-                        console.log('خطأ في الحذف من IndexedDB');
-                    };
-                } catch (error) {
-                    console.error('IndexedDB delete error:', error);
-                }
-            }
-            
-            alert('✅ تم حذف الصيدلية بنجاح!');
-            
-            // إعادة تحميل البيانات
-            loadPharmaciesFromLocalStorage();
         }
         
         function viewPharmacyProfile(pharmacyId) {
-            const pharmacy = allPharmacies.find(p => (p.id || allPharmacies.indexOf(p)) === pharmacyId);
-            if (!pharmacy) {
-                alert('لم يتم العثور على الصيدلية');
-                return;
-            }
+            const pharmacy = allPharmacies.find(p => p.id == pharmacyId);
+            if (!pharmacy) return;
             
             sessionStorage.setItem('selectedPharmacyProfile', JSON.stringify(pharmacy));
             window.location.replace('pharmacy-profile.html');
         }
         
         function goBack() {
-            if (currentUser.userType === 'admin') {
-                window.location.replace('admin-dashboard.html');
-            } else if (currentUser.userType === 'employee') {
-                window.location.replace('telesales.html');
-            } else {
-                window.location.replace('menu.html');
-            }
+            window.location.replace('products.html');
         }
         
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            event.target.classList.add('active');
+            const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(`'${tabName}'`));
+            if (activeBtn) activeBtn.classList.add('active');
             document.getElementById(tabName + 'Tab').classList.add('active');
         }
         
@@ -1004,7 +1093,6 @@
                 });
             });
             
-            // Auto-detect columns
             autoDetectColumns();
         }
         
@@ -1064,76 +1152,58 @@
             previewDiv.innerHTML = html;
         }
         
-        function processBulkImport() {
+        async function processBulkImport() {
             const nameCol = parseInt(document.getElementById('nameColumn').value);
             const phoneCol = parseInt(document.getElementById('phoneColumn').value);
             const addressCol = parseInt(document.getElementById('addressColumn').value);
             const latCol = document.getElementById('latColumn').value ? parseInt(document.getElementById('latColumn').value) : null;
             const lngCol = document.getElementById('lngColumn').value ? parseInt(document.getElementById('lngColumn').value) : null;
             
-            let successCount = 0;
-            let errorCount = 0;
-            const errors = [];
-            
-            const pharmacies = JSON.parse(localStorage.getItem('pharmacies')) || [];
-            
-            bulkData.forEach((row, index) => {
-                try {
-                    const name = row[nameCol]?.trim();
-                    const phone = row[phoneCol]?.trim();
-                    const address = row[addressCol]?.trim();
-                    const lat = latCol !== null ? row[latCol]?.trim() : '';
-                    const lng = lngCol !== null ? row[lngCol]?.trim() : '';
-                    
-                    if (!name || !phone || !address) {
-                        errors.push(`الصف ${index + 2}: بيانات ناقصة`);
-                        errorCount++;
-                        return;
-                    }
-                    
-                    if (phone.length !== 11) {
-                        errors.push(`الصف ${index + 2}: رقم التليفون غير صحيح`);
-                        errorCount++;
-                        return;
-                    }
-                    
-                    const pharmacyData = {
-                        id: Date.now() + index,
-                        userId: currentUser.email,
-                        warehouseName: currentUser.warehouseName,
-                        pharmacyName: name,
-                        pharmacyPhone: phone,
-                        pharmacyAddress: address,
-                        pharmacyGPS: (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null,
-                        createdAt: new Date().toISOString()
-                    };
-                    
-                    pharmacies.push(pharmacyData);
-                    successCount++;
-                    
-                } catch (error) {
-                    errors.push(`الصف ${index + 2}: ${error.message}`);
-                    errorCount++;
+            const importBtn = document.getElementById('importBtn');
+            const originalText = importBtn.textContent;
+            importBtn.disabled = true;
+            importBtn.textContent = '⏳ جاري الرفع للسيرفر...';
+
+            const toInsert = bulkData.map(row => {
+                const name = row[nameCol]?.trim();
+                const phone = row[phoneCol]?.trim();
+                const address = row[addressCol]?.trim();
+                const lat = latCol !== null ? row[latCol]?.trim() : '';
+                const lng = lngCol !== null ? row[lngCol]?.trim() : '';
+
+                if (!name || !phone || !address || phone.length !== 11) return null;
+
+                return {
+                    name: name,
+                    phone: phone,
+                    address: address,
+                    warehouse_id: currentWarehouseId,
+                    user_id: currentUser.email,
+                    gps_location: (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null
+                };
+            }).filter(p => p !== null);
+
+            try {
+                const supabase = await getSupabase();
+                if (!supabase) throw new Error('الاتصال بالسيرفر غير متوفر');
+
+                const batchSize = 100;
+                for (let i = 0; i < toInsert.length; i += batchSize) {
+                    const batch = toInsert.slice(i, i + batchSize);
+                    const { error } = await supabase.from('pharmacies').insert(batch);
+                    if (error) throw error;
                 }
-            });
-            
-            localStorage.setItem('pharmacies', JSON.stringify(pharmacies));
-            console.log('Bulk import completed. Total pharmacies in localStorage:', pharmacies.length);
-            
-            let message = `تم استيراد ${successCount} صيدلية بنجاح`;
-            if (errorCount > 0) {
-                message += `\nفشل في استيراد ${errorCount} صيدلية`;
-                if (errors.length > 0) {
-                    message += '\n\nالأخطاء:\n' + errors.slice(0, 5).join('\n');
-                    if (errors.length > 5) message += `\n... و ${errors.length - 5} أخطاء أخرى`;
-                }
+
+                alert(`✅ تم استيراد ${toInsert.length} صيدلية بنجاح إلى السيرفر`);
+                cancelBulkImport();
+                await loadPharmacies();
+            } catch (error) {
+                console.error('Bulk import error:', error);
+                alert('❌ خطأ أثناء الاستيراد: ' + error.message);
+            } finally {
+                importBtn.disabled = false;
+                importBtn.textContent = originalText;
             }
-            
-            alert(message);
-            cancelBulkImport();
-            
-            // إعادة تحميل البيانات
-            loadPharmaciesFromLocalStorage();
         }
         
         function cancelBulkImport() {
@@ -1143,7 +1213,6 @@
             fileHeaders = [];
         }
         
-        // Add event listeners for column mapping
         document.addEventListener('DOMContentLoaded', function() {
             ['nameColumn', 'phoneColumn', 'addressColumn'].forEach(id => {
                 const element = document.getElementById(id);
@@ -1153,19 +1222,111 @@
             });
         });
         
-        function goBack() {
-            if (currentUser.userType === 'admin') {
-                window.location.replace('admin-dashboard.html');
-            } else if (currentUser.userType === 'employee') {
-                window.location.replace('telesales.html');
-            } else {
-                window.location.replace('menu.html');
+        class PharmacyVoiceSearch {
+            constructor() {
+                this.micBtn = document.getElementById('pharmacyMic');
+                this.searchInput = document.getElementById('searchInput');
+                this.isListening = false;
+                this.recognition = null;
+                
+                if (this.micBtn) this.init();
+            }
+
+            async init() {
+                this.setupSpeech();
+                if (window.GeminiVoiceProcessor) {
+                    this.geminiProcessor = new window.GeminiVoiceProcessor();
+                }
+                this.micBtn.addEventListener('click', () => this.toggle());
+            }
+
+            setupSpeech() {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SR) return;
+
+                this.recognition = new SR();
+                this.recognition.lang = 'en-US';
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.maxAlternatives = 5;
+
+                this.recognition.onstart = () => {
+                    this.isListening = true;
+                    this.micBtn.classList.add('listening');
+                    this.showSpeechBubble('...استمع الآن');
+                };
+
+                this.recognition.onresult = async (event) => {
+                    const transcripts = Array.from(event.results[0]).map(res => res.transcript);
+                    this.showSpeechBubble(transcripts[0]);
+                    await this.processResults(transcripts);
+                };
+
+                this.recognition.onerror = () => { this.stop(); };
+                this.recognition.onend = () => {
+                    this.isListening = false;
+                    this.micBtn.classList.remove('listening');
+                    setTimeout(() => this.hideSpeechBubble(), 2000);
+                };
+            }
+
+            toggle() { this.isListening ? this.stop() : this.start(); }
+            start() { try { if (this.recognition) this.recognition.start(); } catch (e) {} }
+            stop() { if (this.recognition) this.recognition.stop(); }
+
+            showSpeechBubble(text) {
+                const bubble = document.getElementById('speechBubble');
+                if (bubble) { bubble.textContent = text; bubble.style.display = 'block'; }
+            }
+
+            hideSpeechBubble() {
+                const bubble = document.getElementById('speechBubble');
+                if (bubble) bubble.style.display = 'none';
+            }
+
+            async asyncProcessVoice(transcripts, pharmacyList) {
+                if (!this.geminiProcessor) return transcripts[0];
+                const contextList = pharmacyList.map(p => ({
+                    pharmacyName: p.name || p.pharmacyName,
+                    id: p.id
+                }));
+                
+                try {
+                    const result = await this.geminiProcessor.processVoiceInput(transcripts, contextList, 'pharmacy');
+                    if (result && result.correctedDrug && result.confidence > 0.4) {
+                        return result.correctedDrug;
+                    }
+                    return transcripts[0];
+                } catch (e) {
+                    console.error('Gemini Pharmacy Recon error:', e);
+                    return transcripts[0];
+                }
+            }
+
+            async processResults(transcripts) {
+                let bestMatch = transcripts[0];
+                if (allPharmacies.length > 0) {
+                    bestMatch = await this.asyncProcessVoice(transcripts, allPharmacies);
+                }
+                this.searchInput.value = bestMatch;
+                this.searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+                this.showSpeechBubble('بحث عن: ' + bestMatch);
             }
         }
-        
-        initDB();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.pharmacyVoiceSearch = new PharmacyVoiceSearch();
+        });
+
+        // تم إزالة وظائف الدليل العام ونقلها لصفحة مستقلة لضمان عزل البيانات وسهولة الوصول
+
+        // تهيئة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            initPage();
+        });
     </script>
-    <script src="voice-search.js"></script>
+    <script src="supabase-singleton.js"></script>
+    
     
     <script src="ai-core.js"></script>
     <script src="ai-validation.js"></script>

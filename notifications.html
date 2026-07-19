@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الإشعارات</title>
     <script src="navigation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <style>
         body {
             margin: 0;
@@ -221,64 +223,84 @@
 
     <script>
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        if (!currentUser) window.location.href = 'login.html';
+        if (!currentUser) if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
         
-        let db;
         let allNotifications = [];
-        
+        const currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+
         function initDB() {
-            const request = indexedDB.open('WarehouseDB', 5);
-            
-            request.onupgradeneeded = function(e) {
-                db = e.target.result;
-                
-                if (!db.objectStoreNames.contains('notifications')) {
-                    const objectStore = db.createObjectStore('notifications', { keyPath: 'id', autoIncrement: true });
-                    objectStore.createIndex('userId', 'userId', { unique: false });
-                    objectStore.createIndex('isRead', 'isRead', { unique: false });
-                    objectStore.createIndex('createdAt', 'createdAt', { unique: false });
+            // جلب من Supabase مباشرة
+            loadNotificationsFromSupabase();
+        }
+
+        async function loadNotificationsFromSupabase() {
+            try {
+                // التحقق من وجود Supabase
+                if (!window.SupabaseSingleton || !window.SupabaseSingleton.getClient()) {
+                    console.warn('⚠️ Supabase غير متاح');
+                    // عند عدم وجود Supabase، إظهار رسالة خطأ
+                    document.getElementById('notificationList').innerHTML = '';
+                    document.getElementById('emptyState').innerHTML = `
+                        <div class="empty-icon">📡</div>
+                        <div class="empty-text">تعذر الاتصال بالسيرفر</div>
+                        <div style="font-size: 14px; color: #999; margin-top: 10px;">يرجى التحقق من اتصال الإنترنت</div>
+                    `;
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('actions').style.display = 'none';
+                    return;
                 }
-            };
-            
-            request.onsuccess = function() {
-                db = request.result;
-                loadNotifications();
-            };
-            
-            request.onerror = function() {
-                loadNotificationsFromLocalStorage();
-            };
-        }
-        
-        function loadNotifications() {
-            if (!db) {
-                loadNotificationsFromLocalStorage();
-                return;
-            }
-            
-            const transaction = db.transaction(['notifications'], 'readonly');
-            const objectStore = transaction.objectStore('notifications');
-            const index = objectStore.index('userId');
-            const request = index.getAll(currentUser.email);
-            
-            request.onsuccess = function() {
-                allNotifications = (request.result || []).sort((a, b) => 
-                    new Date(b.createdAt) - new Date(a.createdAt)
-                );
+
+                const supabaseClient = window.SupabaseSingleton.getClient();
+
+                // عرض حالة التحميل
+                document.getElementById('notificationList').innerHTML = '<div class="empty-state" style="display: block;">⏳ جاري تحميل الإشعارات...</div>';
+
+                // جلب الإشعارات من Supabase مع warehouse_id filtering
+                const { data, error } = await supabaseClient
+                    .from('notifications')
+                    .select('*')
+                    .eq('warehouse_id', currentWarehouseId)
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                if (error) throw error;
+
+                // تحويل البيانات
+                allNotifications = (data || []).map(function(n) {
+                    return {
+                        id: n.id,
+                        title: n.title,
+                        message: n.message,
+                        isRead: n.is_read || n.isRead,
+                        createdAt: n.created_at || n.createdAt,
+                        orderNumber: n.order_number || n.orderNumber,
+                        orderDate: n.order_date || n.orderDate,
+                        totalAmount: n.total_amount || n.totalAmount,
+                        itemsCount: n.items_count || n.itemsCount,
+                        pharmacyName: n.pharmacy_name || n.pharmacyName,
+                        pharmacyPhone: n.pharmacy_phone || n.pharmacyPhone,
+                        pharmacyAddress: n.pharmacy_address || n.pharmacyAddress,
+                        pharmacyGPS: n.pharmacy_gps || n.pharmacyGPS,
+                        products: n.products,
+                        warehouse_id: n.warehouse_id
+                    };
+                });
+
+                console.log('✅ تم تحميل', allNotifications.length, 'إشعار من Supabase');
                 displayNotifications(allNotifications);
-            };
-            
-            request.onerror = function() {
-                loadNotificationsFromLocalStorage();
-            };
-        }
-        
-        function loadNotificationsFromLocalStorage() {
-            const notifications = JSON.parse(localStorage.getItem('notifications')) || [];
-            allNotifications = notifications
-                .filter(n => n.userId === currentUser.email)
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            displayNotifications(allNotifications);
+
+            } catch (err) {
+                console.error('❌ خطأ في تحميل الإشعارات:', err);
+                // عند عدم وجود إنترنت، إظهار رسالة خطأ
+                document.getElementById('notificationList').innerHTML = '';
+                document.getElementById('emptyState').innerHTML = `
+                    <div class="empty-icon">📡</div>
+                    <div class="empty-text">تعذر الاتصال بالسيرفر</div>
+                    <div style="font-size: 14px; color: #999; margin-top: 10px;">يرجى التحقق من اتصال الإنترنت</div>
+                `;
+                document.getElementById('emptyState').style.display = 'block';
+                document.getElementById('actions').style.display = 'none';
+            }
         }
         
         function displayNotifications(notifications) {
@@ -424,90 +446,95 @@
             return date.toLocaleDateString('ar-EG');
         }
         
-        function markAsRead(notificationId) {
-            if (!db) {
-                const notifications = JSON.parse(localStorage.getItem('notifications')) || [];
-                const index = notifications.findIndex(n => n.id === notificationId);
-                if (index !== -1) {
-                    notifications[index].isRead = true;
-                    localStorage.setItem('notifications', JSON.stringify(notifications));
-                    loadNotificationsFromLocalStorage();
+        async function markAsRead(notificationId) {
+            try {
+                // محاولة تحديث في Supabase أولاً
+                if (window.SupabaseSingleton && window.SupabaseSingleton.getClient()) {
+                    const supabaseClient = window.SupabaseSingleton.getClient();
+
+                    const { error } = await supabaseClient
+                        .from('notifications')
+                        .update({ is_read: true })
+                        .eq('id', notificationId)
+                        .eq('warehouse_id', currentWarehouseId);
+
+                    if (!error) {
+                        // تحديث محلياً
+                        const notification = allNotifications.find(n => n.id === notificationId);
+                        if (notification) {
+                            notification.isRead = true;
+                            displayNotifications(allNotifications);
+                        }
+                        return;
+                    }
                 }
-                return;
+            } catch (e) {
+                console.warn('⚠️ فشل التحديث في Supabase:', e);
             }
-            
-            const transaction = db.transaction(['notifications'], 'readwrite');
-            const objectStore = transaction.objectStore('notifications');
-            const request = objectStore.get(notificationId);
-            
-            request.onsuccess = function() {
-                const notification = request.result;
-                if (notification) {
-                    notification.isRead = true;
-                    objectStore.put(notification);
-                    loadNotifications();
+
+            // لا يوجد fallback - النظام يتطلب اتصال بالسيرفر
+            console.warn('⚠️ لا يمكن تحديث الإشعارات بدون اتصال بالسيرفر');
+            alert('تعذر الاتصال بالسيرفر. يرجى التحقق من اتصال الإنترنت.');
+        }
+
+        async function markAllAsRead() {
+            try {
+                // محاولة تحديث في Supabase أولاً
+                if (window.SupabaseSingleton && window.SupabaseSingleton.getClient()) {
+                    const supabaseClient = window.SupabaseSingleton.getClient();
+
+                    const { error } = await supabaseClient
+                        .from('notifications')
+                        .update({ is_read: true })
+                        .eq('warehouse_id', currentWarehouseId)
+                        .eq('is_read', false);
+
+                    if (!error) {
+                        // تحديث محلياً
+                        allNotifications.forEach(n => n.isRead = true);
+                        displayNotifications(allNotifications);
+                        return;
+                    }
                 }
-            };
+            } catch (e) {
+                console.warn('⚠️ فشل التحديث في Supabase:', e);
+            }
+
+            // لا يوجد fallback - النظام يتطلب اتصال بالسيرفر
+            console.warn('⚠️ لا يمكن تحديث الإشعارات بدون اتصال بالسيرفر');
+            alert('تعذر الاتصال بالسيرفر. يرجى التحقق من اتصال الإنترنت.');
         }
         
-        function markAllAsRead() {
-            if (!db) {
-                const notifications = JSON.parse(localStorage.getItem('notifications')) || [];
-                notifications.forEach(n => {
-                    if (n.userId === currentUser.email) n.isRead = true;
-                });
-                localStorage.setItem('notifications', JSON.stringify(notifications));
-                loadNotificationsFromLocalStorage();
-                return;
-            }
-            
-            const transaction = db.transaction(['notifications'], 'readwrite');
-            const objectStore = transaction.objectStore('notifications');
-            const index = objectStore.index('userId');
-            const request = index.openCursor(currentUser.email);
-            
-            request.onsuccess = function(e) {
-                const cursor = e.target.result;
-                if (cursor) {
-                    const notification = cursor.value;
-                    notification.isRead = true;
-                    cursor.update(notification);
-                    cursor.continue();
-                } else {
-                    loadNotifications();
-                }
-            };
-        }
-        
-        function clearAllNotifications() {
+        async function clearAllNotifications() {
             if (!confirm('هل أنت متأكد من حذف جميع الإشعارات؟')) return;
-            
-            if (!db) {
-                const notifications = JSON.parse(localStorage.getItem('notifications')) || [];
-                const filtered = notifications.filter(n => n.userId !== currentUser.email);
-                localStorage.setItem('notifications', JSON.stringify(filtered));
-                loadNotificationsFromLocalStorage();
-                return;
-            }
-            
-            const transaction = db.transaction(['notifications'], 'readwrite');
-            const objectStore = transaction.objectStore('notifications');
-            const index = objectStore.index('userId');
-            const request = index.openCursor(currentUser.email);
-            
-            request.onsuccess = function(e) {
-                const cursor = e.target.result;
-                if (cursor) {
-                    cursor.delete();
-                    cursor.continue();
-                } else {
-                    loadNotifications();
+
+            try {
+                // محاولة الحذف من Supabase أولاً
+                if (window.SupabaseSingleton && window.SupabaseSingleton.getClient()) {
+                    const supabaseClient = window.SupabaseSingleton.getClient();
+
+                    const { error } = await supabaseClient
+                        .from('notifications')
+                        .delete()
+                        .eq('warehouse_id', currentWarehouseId);
+
+                    if (!error) {
+                        allNotifications = [];
+                        displayNotifications(allNotifications);
+                        return;
+                    }
                 }
-            };
+            } catch (e) {
+                console.warn('⚠️ فشل الحذف من Supabase:', e);
+            }
+
+            // لا يوجد fallback - النظام يتطلب اتصال بالسيرفر
+            console.warn('⚠️ لا يمكن حذف الإشعارات بدون اتصال بالسيرفر');
+            alert('تعذر الاتصال بالسيرفر. يرجى التحقق من اتصال الإنترنت.');
         }
         
         function goBack() {
-            window.location.replace('menu.html');
+            window.location.replace('products.html');
         }
         
         initDB();

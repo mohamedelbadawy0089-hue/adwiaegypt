@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سلة الأوردر</title>
     <script src="navigation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-singleton.js"></script>
+    <script src="multi-tenant-integration.js"></script>
     <style>
         body {
             margin: 0;
@@ -284,7 +287,7 @@
 
     <script>
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-        if (!currentUser) window.location.href = 'login.html';
+        if (!currentUser) if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
         
         let cart = JSON.parse(sessionStorage.getItem('cart')) || [];
         
@@ -331,15 +334,42 @@
         }
         
         function updateQuantity(index, change) {
-            cart[index].quantity = Math.max(1, cart[index].quantity + change);
+            const item = cart[index];
+            const isFixedQuantity = item.quantity_type === 'fixed';
+            const originalQty = item.original_quantity || item.quantity;
+            
+            if (isFixedQuantity) {
+                // Fixed quantity: no limit, can increase freely
+                item.quantity = Math.max(1, item.quantity + change);
+            } else {
+                // Decreasing quantity: limited by original stock
+                const maxQty = originalQty || 999999;
+                const newQty = item.quantity + change;
+                if (newQty > maxQty) {
+                    alert(`⚠️ الكمية المتاحة: ${maxQty}`);
+                    return;
+                }
+                item.quantity = Math.max(1, newQty);
+            }
+            
             sessionStorage.setItem('cart', JSON.stringify(cart));
             displayCart();
         }
         
         function setQuantity(index, value) {
+            const item = cart[index];
             const qty = parseInt(value);
             if (qty > 0) {
-                cart[index].quantity = qty;
+                const isFixedQuantity = item.quantity_type === 'fixed';
+                const originalQty = item.original_quantity || item.quantity;
+                
+                if (!isFixedQuantity && qty > originalQty) {
+                    alert(`⚠️ الكمية المتاحة: ${originalQty}`);
+                    item.quantity = originalQty;
+                } else {
+                    item.quantity = qty;
+                }
+                
                 sessionStorage.setItem('cart', JSON.stringify(cart));
                 displayCart();
             }
@@ -433,36 +463,49 @@
             saveOrder(orderData);
         }
         
-        function saveOrder(orderData) {
-            const request = indexedDB.open('WarehouseDB', 5);
-            
-            request.onsuccess = function() {
-                const db = request.result;
+        async function saveOrder(orderData) {
+            try {
+                // ✅ استخدام نظام Multi-Tenant
+                const tenantManager = new MultiTenantManager(window.SupabaseSingleton.getClient());
+                const currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+                const currentUserId = localStorage.getItem('slamtak-user-id');
                 
-                if (!db.objectStoreNames.contains('orders')) {
-                    saveOrderToLocalStorage(orderData);
-                    return;
-                }
-                
-                const transaction = db.transaction(['orders'], 'readwrite');
-                const objectStore = transaction.objectStore('orders');
-                objectStore.add(orderData);
-                
-                transaction.oncomplete = function() {
-                    alert('تم إنشاء الأوردر بنجاح!');
-                    cart = [];
-                    sessionStorage.removeItem('cart');
-                    window.location.replace('orders.html');
+                const orderWithTenant = {
+                    ...orderData,
+                    warehouse_id: currentWarehouseId,
+                    user_id: currentUserId,  // ← ربط بالمستخدم الحالي
+                    order_number: await generateOrderNumber(),
+                    order_date: new Date().toISOString(),
+                    status: 'pending'
                 };
                 
-                transaction.onerror = function() {
-                    saveOrderToLocalStorage(orderData);
-                };
-            };
-            
-            request.onerror = function() {
+                // ✅ إضافة مع فلتر المستخدم
+                const result = await tenantManager.insert('orders', orderWithTenant);
+                
+                if (!result.success) throw new Error(result.error);
+                
+                alert('تم إنشاء الأوردر بنجاح!');
+                cart = [];
+                sessionStorage.removeItem('cart');
+                window.location.replace('sales.html');
+                
+            } catch (error) {
+                console.error('❌ خطأ في حفظ الأوردر:', error);
+                // Fallback to localStorage
                 saveOrderToLocalStorage(orderData);
-            };
+            }
+        }
+        
+        async function generateOrderNumber() {
+            try {
+                const supabaseClient = window.SupabaseSingleton.getClient();
+                const { data, error } = await supabaseClient.rpc('generate_order_number');
+                if (error) throw error;
+                return data || 'ORD-' + Date.now();
+            } catch (error) {
+                console.error('Error generating order number:', error);
+                return 'ORD-' + Date.now();
+            }
         }
         
         function saveOrderToLocalStorage(orderData) {
@@ -472,7 +515,7 @@
             alert('تم إنشاء الأوردر بنجاح!');
             cart = [];
             sessionStorage.removeItem('cart');
-            window.location.replace('orders.html');
+            window.location.replace('sales.html');
         }
         
         function goBack() {

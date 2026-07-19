@@ -1313,7 +1313,7 @@
                             <td>${product.name}</td>
                             <td>${product.quantity}</td>
                             <td>${product.price} جنيه</td>
-                            <td><img src="${product.image || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; object-fit: cover;"></td>
+                            <td><div style="width: 50px; height: 50px; background: #e0e0e0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px;">💊</div></td>
                             <td>
                                 <button onclick="editProduct(${product.id})" style="margin: 2px; padding: 5px 10px; background: #4caf50; color: white; border: none; border-radius: 3px; cursor: pointer;">تعديل</button>
                                 <button onclick="deleteProduct(${product.id})" style="margin: 2px; padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">حذف</button>

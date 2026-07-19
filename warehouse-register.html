@@ -35,6 +35,17 @@ input[type="text"],input[type="password"],select{width:100%;padding:12px;border:
 <div class="error" id="passwordError">خطأ في كلمة المرور</div>
 </div>
 <div class="field">
+<label for="adminPassword">كلمة سر المدير *</label>
+<input type="password" id="adminPassword" required placeholder="كلمة سر خاصة بالمدير">
+<button type="button" class="show-btn" onclick="togglePassword('adminPassword')">إظهار</button>
+</div>
+<div class="field">
+<label for="confirmAdminPassword">تأكيد كلمة سر المدير *</label>
+<input type="password" id="confirmAdminPassword" required placeholder="أعد كتابة كلمة سر المدير">
+<button type="button" class="show-btn" onclick="togglePassword('confirmAdminPassword')">إظهار</button>
+<div class="error" id="adminPasswordError">⚠️ كلمتا سر المدير غير متطابقتين</div>
+</div>
+<div class="field">
 <label for="province">المحافظة</label>
 <select id="province">
 <option value="">اختر المحافظة</option>
@@ -67,19 +78,44 @@ document.getElementById('registerForm').addEventListener('submit',async(e)=>{
 e.preventDefault();
 const name = document.getElementById('name').value.trim();
 const password = document.getElementById('password').value;
+const adminPassword = document.getElementById('adminPassword').value;
+const confirmAdminPassword = document.getElementById('confirmAdminPassword').value;
 const province = document.getElementById('province').value || 'غير محدد';
+
+// ✅ التحقق من الاسم
 if(!name || name.length < 3){
 document.getElementById('generalError').textContent = 'اسم المخزن قصير جداً';
 document.getElementById('generalError').style.display = 'block';
 return;
 }
+
+// ✅ التحقق من باسورد الموظف
 if(password.length < 6){
 document.getElementById('passwordError').style.display = 'block';
 return;
 }
+
+// ✅ التحقق من باسورد المدير
+if(adminPassword.length < 6){
+document.getElementById('adminPasswordError').textContent = '⚠️ كلمة سر المدير يجب أن تكون 6 أحرف على الأقل';
+document.getElementById('adminPasswordError').style.display = 'block';
+return;
+}
+
+// ✅ التحقق من تطابق باسورد المدير
+if(adminPassword !== confirmAdminPassword){
+document.getElementById('adminPasswordError').textContent = '⚠️ كلمتا سر المدير غير متطابقتين';
+document.getElementById('adminPasswordError').style.display = 'block';
+return;
+}
+
+// إخفاء رسالة الخطأ إذا كان كل شيء صحيحاً
+document.getElementById('adminPasswordError').style.display = 'none';
+
 const data={
 name: name,
 password: password,
+admin_key: adminPassword, // ✅ حفظ باسورد المدير
 province: province,
 timestamp:new Date().toISOString()
 };
