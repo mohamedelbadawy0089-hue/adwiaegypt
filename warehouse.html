@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="سلامتك - بوابة مخازن التوزيع">
     <title>سلامتك - بوابة المخزن</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="libs/cairo.css" rel="stylesheet">
     <script src="navigation.js"></script>
     <script src="sidebar.js"></script>
     <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="libs/supabase.min.js"></script>
     <script>
         // ✅ تهيئة Supabase عالمياً (بدون const لتجنب التعارض)
         window.SUPABASE_URL = 'https://iksjhjxwphmvthryfeae.supabase.co';
@@ -650,16 +648,6 @@
             document.getElementById('alertBox').style.display = 'none';
         }
 
-        function switchTab(tabId) {
-            // Update active button
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-
-            // Update active content
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-        }
-
         function showAlert(message, type = 'error') {
             const box = document.getElementById('alertBox');
             // Use innerHTML for HTML content, fallback to textContent for plain text
@@ -883,6 +871,36 @@
 
                 console.log('✅ Auth user created:', authData.user?.id);
 
+                // ✅ استدعاء RPC function لإنشاء سجل المستخدم والمخزن
+                console.log('🏭 Setting up user and warehouse...');
+                const { data: setupData, error: setupError } = await window.supabaseClient.rpc('setup_user_after_signup', {
+                    p_user_id: authData.user.id,
+                    p_email: email,
+                    p_phone: phone
+                });
+
+                if (setupError) {
+                    console.error('Setup Error:', setupError);
+                    showAlert('⚠️ تم التسجيل بنجاح، لكن حدث خطأ في إعداد المخزن. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.');
+                    // نستمر لأن التسجيل تم بنجاح، لكن نحذر المستخدم
+                } else if (!setupData.success) {
+                    console.error('Setup failed:', setupData.error);
+                    showAlert('⚠️ تم التسجيل بنجاح، لكن حدث خطأ في إعداد المخزن: ' + (setupData.error || 'Unknown error'));
+                } else {
+                    console.log('✅ User and warehouse setup completed:', setupData);
+                }
+
+                // ✅ حفظ معرف المخزن الصحيح (من setupData أو معرف المستخدم كاحتياطي)
+                const actualWarehouseId = setupData?.warehouse_id || authData.user?.id;
+                
+                // حفظ في جميع مفاتيح localStorage المطلوبة
+                const warehouseKeys = ['currentWarehouseId', 'current_warehouse_id', 'slamtak-warehouse-id', 'warehouse_id'];
+                warehouseKeys.forEach(key => {
+                    localStorage.setItem(key, actualWarehouseId);
+                });
+                
+                console.log('✅ Warehouse ID saved to localStorage:', actualWarehouseId);
+
                 // ✅ حفظ في localStorage للاستخدام المحلي
                 const newUser = {
                     warehouseName: name,
@@ -908,8 +926,12 @@
                 localStorage.setItem('slamtak-user-email', email);
                 localStorage.setItem('slamtak-auth-status', 'authenticated');
                 localStorage.setItem('slamtak-is-admin', 'true');
-                localStorage.setItem('current_warehouse_id', authData.user?.id);
-                localStorage.setItem('currentWarehouseId', authData.user?.id);
+
+                // ✅ حفظ معرف المخزن الصحيح (من setupData أو معرف المستخدم كاحتياطي)
+                // تم تعريف actualWarehouseId مسبقاً في السطر 906
+                localStorage.setItem('current_warehouse_id', actualWarehouseId);
+                localStorage.setItem('currentWarehouseId', actualWarehouseId);
+                localStorage.setItem('slamtak-warehouse-id', actualWarehouseId);
                 localStorage.setItem('localAuth', 'true');
                 
                 // ✅ إضافة متغيرات الجلسة للهجين

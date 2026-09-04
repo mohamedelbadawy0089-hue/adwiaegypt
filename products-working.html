@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>???? ??????</title>
     <script src="navigation.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="libs/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <style>
         body {
@@ -234,7 +234,7 @@
     </div>
 
     <script src="supabase-singleton.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="libs/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
 
     <script>
@@ -407,9 +407,229 @@
         // Search functionality
         document.getElementById('searchInput').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            // Implement search logic here
-            console.log('Searching for:', searchTerm);
+            filterProducts(searchTerm);
         });
+        
+        // Load products on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadProducts();
+            await loadStats();
+        });
+        
+        // ✅ تحميل المنتجات من Supabase وعرضها في الجدول
+        async function loadProducts() {
+            try {
+                const supabaseClient = window.SupabaseSingleton.getClient();
+                const currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+                
+                if (!supabaseClient || !currentWarehouseId) {
+                    console.error('Supabase client or warehouse ID not available');
+                    return;
+                }
+                
+                console.log('??? [Products] Loading products for warehouse:', currentWarehouseId);
+                
+                const { data: products, error } = await supabaseClient
+                    .from('products')
+                    .select('*')
+                    .eq('warehouse_id', currentWarehouseId)
+                    .order('name', { ascending: true });
+                
+                if (error) throw error;
+                
+                console.log('??? [Products] Loaded:', products?.length || 0, 'products');
+                
+                // عرض المنتجات في الجدول
+                displayProducts(products || []);
+                
+            } catch (error) {
+                console.error('??? [Products] Error loading products:', error);
+                displayProducts([]);
+            }
+        }
+        
+        // ✅ عرض المنتجات في الجدول
+        function displayProducts(products) {
+            const table = document.getElementById('productsTable');
+            const tbody = document.getElementById('productsBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (!tbody) return;
+            
+            tbody.innerHTML = '';
+            
+            if (products.length === 0) {
+                table.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            table.style.display = 'table';
+            emptyState.style.display = 'none';
+            
+            products.forEach((product, index) => {
+                const row = document.createElement('tr');
+                
+                // حساب السعر بعد الخصم
+                const price = parseFloat(product.price) || 0;
+                const discount = parseFloat(product.discount) || 0;
+                const priceAfterDiscount = price - (price * (discount / 100));
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${product.name || ''}</td>
+                    <td>${price.toFixed(2)}</td>
+                    <td>${discount}%</td>
+                    <td>${priceAfterDiscount.toFixed(2)}</td>
+                    <td>${product.quantity || 0}</td>
+                    <td>${formatDate(product.production_date)}</td>
+                    <td>${formatDate(product.expiry_date)}</td>
+                    <td>
+                        <button onclick="editProduct('${product.id}')" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; margin-right: 5px; cursor: pointer;">تعديل</button>
+                        <button onclick="deleteProduct('${product.id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">حذف</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // ✅ تنسيق التاريخ
+        function formatDate(dateString) {
+            if (!dateString) return '-'; 
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('ar-EG');
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        // ✅ فلترة المنتجات حسب البحث
+        function filterProducts(searchTerm) {
+            const table = document.getElementById('productsTable');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const productName = row.cells[1].textContent.toLowerCase();
+                if (productName.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        // ✅ تعديل منتج
+        function editProduct(productId) {
+            alert('تعديل المنتج - سيتم تنفيذ هذه الميزة قريباً');
+            console.log('تعديل المنتج:', productId);
+        }
+        
+        // ✅ حذف منتج
+        async function deleteProduct(productId) {
+            if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+            
+            try {
+                const supabaseClient = window.SupabaseSingleton.getClient();
+                const currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+                
+                const { error } = await supabaseClient
+                    .from('products')
+                    .delete()
+                    .eq('id', productId)
+                    .eq('warehouse_id', currentWarehouseId);
+                
+                if (error) throw error;
+                
+                alert('تم حذف المنتج بنجاح');
+                await loadProducts(); // إعادة تحميل المنتجات
+                await loadStats(); // تحديث الإحصائيات
+                
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                alert('خطأ في حذف المنتج');
+            }
+        }
+        
+        // ✅ تحديث الإحصائيات
+        async function updateStats() {
+            try {
+                const supabaseClient = window.SupabaseSingleton.getClient();
+                const currentWarehouseId = localStorage.getItem('current_warehouse_id') || localStorage.getItem('slamtak-user-id');
+                
+                if (!supabaseClient || !currentWarehouseId) {
+                    console.error('Supabase client or warehouse ID not available');
+                    hideLoadingSpinners();
+                    // Reset UI to 0 if no warehouse access
+                    document.getElementById('totalCount').innerHTML = '0';
+                    document.getElementById('unlimitedCount').innerHTML = '0';
+                    document.getElementById('limitedCount').innerHTML = '0';
+                    document.getElementById('expiringCount').innerHTML = '0';
+                    return;
+                }
+                
+                console.log('??? [Stats] Counting products for warehouse:', currentWarehouseId);
+                
+                // Get total count from Supabase - EXACT count for current warehouse only
+                const { count: totalCount, error: totalError } = await supabaseClient
+                    .from('products')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('warehouse_id', currentWarehouseId);
+                
+                if (totalError) throw totalError;
+                
+                // Get unlimited count from Supabase - EXACT count for current warehouse only
+                const { count: unlimitedCount, error: unlimitedError } = await supabaseClient
+                    .from('products')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('warehouse_id', currentWarehouseId)
+                    .eq('is_unlimited', true);
+                
+                if (unlimitedError) throw unlimitedError;
+                
+                // Calculate limited count
+                const limitedCount = totalCount - unlimitedCount;
+                
+                // Get expiring products count (within 3 months) - EXACT count for current warehouse only
+                const today = new Date();
+                const threeMonthsLater = new Date();
+                threeMonthsLater.setMonth(today.getMonth() + 3);
+                
+                const { count: expiringCount, error: expiringError } = await supabaseClient
+                    .from('products')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('warehouse_id', currentWarehouseId)
+                    .not('expiry_date', 'is', null)
+                    .gte('expiry_date', today.toISOString())
+                    .lte('expiry_date', threeMonthsLater.toISOString());
+                
+                if (expiringError) throw expiringError;
+                
+                // Hide spinners and update UI elements with EXACT counts from Supabase
+                hideLoadingSpinners();
+                document.getElementById('totalCount').innerHTML = totalCount || 0;
+                document.getElementById('unlimitedCount').innerHTML = unlimitedCount || 0;
+                document.getElementById('limitedCount').innerHTML = limitedCount || 0;
+                document.getElementById('expiringCount').innerHTML = expiringCount || 0;
+                
+                console.log('??? [Stats] EXACT counts from Supabase for warehouse', currentWarehouseId, ':', {
+                    total: totalCount,
+                    unlimited: unlimitedCount,
+                    limited: limitedCount,
+                    expiring: expiringCount
+                });
+                
+            } catch (error) {
+                console.error('??? [Stats] Error getting EXACT counts from Supabase:', error);
+                hideLoadingSpinners();
+                // Fallback to 0 values on error
+                document.getElementById('totalCount').innerHTML = '0';
+                document.getElementById('unlimitedCount').innerHTML = '0';
+                document.getElementById('limitedCount').innerHTML = '0';
+                document.getElementById('expiringCount').innerHTML = '0';
+            }
+        }
     </script>
 </body>
 </html>

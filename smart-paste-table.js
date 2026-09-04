@@ -1,55 +1,28 @@
 // c:/Users/My PC/Desktop/slamtak/smart-paste-table.js
 // SmartPasteTable module (JavaScript only). NO HTML should be inside this file.
 
-// Provide a global-safe fallback for savePreviewedData.
-// Some pages reference window.savePreviewedData even if the real implementation is defined in a different bundle.
-// This prevents "typeof window.savePreviewedData === 'undefined'" and gives a clear error.
+// Provide a global-safe fallback for savePreviewedData only if not already defined.
+// Load this file BEFORE stock.html so stock.html can replace it with the real implementation.
+if (typeof window.savePreviewedData !== 'function') {
+    window.savePreviewedData = async function savePreviewedData() {
+    const statusMessage = document.getElementById('saveStatusMessage');
+    if (statusMessage) {
+        statusMessage.style.display = 'block';
+        statusMessage.style.color = '#c62828';
+        statusMessage.style.backgroundColor = '#ffebee';
+        statusMessage.style.borderColor = '#c62828';
+        statusMessage.textContent = 'حدث خطأ: savePreviewedData الحقيقي غير محمّل. راجع Console.';
+    }
+    console.error('savePreviewedData is missing. This fallback is defined in smart-paste-table.js, but the real implementation is not present on the page.');
+        alert('حدث خطأ: savePreviewedData الحقيقي غير محمّل.');
+    };
+}
+
 (function() {
     'use strict';
 
-    if (typeof window.savePreviewedData !== 'function') {
-        window.savePreviewedData = async function savePreviewedData() {
-            const statusMessage = document.getElementById('saveStatusMessage');
-            if (statusMessage) {
-                statusMessage.style.display = 'block';
-                statusMessage.style.color = '#c62828';
-                statusMessage.style.backgroundColor = '#ffebee';
-                statusMessage.style.borderColor = '#c62828';
-                statusMessage.textContent = 'حدث خطأ: savePreviewedData الحقيقي غير محمّل. راجع Console.';
-            }
-            console.error('savePreviewedData is missing. This fallback is defined in smart-paste-table.js, but the real implementation is not present on the page.');
-            alert('حدث خطأ: savePreviewedData الحقيقي غير محمّل.');
-        };
-    }
-
-    // Keep the rest of the module logic unchanged.
-
-    // The original module code follows.
-
-    // eslint-disable-next-line no-unused-vars
-    // (the file continues below)
-
-
-    // التأكد من تحميل النواة الذكية أولاً
-
-    // NOTE: Do not define SmartPasteTable unless AICore exists.
-
-    // ---- ORIGINAL CONTENT STARTS HERE ----
-
-    // eslint-disable-next-line no-inner-declarations
-    // eslint-disable-next-line no-undef
-
-    // التأكد من تحميل النواة الذكية أولاً
-
-    // (the remainder of the file already contains this check)
-
-    'use strict';
-
-
-    // التأكد من تحميل النواة الذكية أولاً
     if (!window.AICore) {
-        console.error("AICore is not loaded. The Smart Paste Table cannot function.");
-        return;
+        console.warn("AICore is not loaded at module initialization. SmartPasteTable may require it.");
     }
 
     /**
@@ -100,10 +73,15 @@
             this.data = data;
 
             // استخدام الذكاء الاصطناعي لمطابقة الأعمدة
-            const { map, software } = AICore.smartMapHeaders(this.headers);
-            this.mapping = map;
+            if (window.AICore && typeof window.AICore.smartMapHeaders === 'function') {
+                const { map, software } = window.AICore.smartMapHeaders(this.headers);
+                this.mapping = map;
+                console.log("برنامج المصدر المكتشف:", software);
+            } else {
+                console.warn("AICore.smartMapHeaders is not available. Using empty mapping.");
+                this.mapping = {};
+            }
 
-            console.log("برنامج المصدر المكتشف:", software);
             console.log("المطابقة الأولية للأعمدة:", this.mapping);
 
             this._renderTable();
@@ -159,7 +137,6 @@
                 this.container.appendChild(moreRowsInfo);
             }
 
-
             const actionsDiv = document.createElement('div');
             actionsDiv.style.display = 'flex';
             actionsDiv.style.gap = '10px';
@@ -201,7 +178,12 @@
                 select.dataset.columnIndex = index;
                 select.className = 'mapping-select';
 
-                const canonicalFields = Object.keys(AICore.pharmacySynonyms);
+                let canonicalFields = [];
+                if (window.AICore && window.AICore.pharmacySynonyms) {
+                    canonicalFields = Object.keys(window.AICore.pharmacySynonyms);
+                } else {
+                    canonicalFields = ['productName', 'price', 'discount', 'quantity', 'expiryDate', 'productionDate', 'barcode'];
+                }
                 
                 const noneOption = document.createElement('option');
                 noneOption.value = 'ignore';
@@ -271,9 +253,6 @@
             console.log("تم تحديث الربط:", this.mapping);
         }
 
-        /**
-         * Resets the component to its initial state, ready for a new paste.
-         */
         reset() {
             this.container.innerHTML = '';
             this.pasteArea.style.display = 'block';

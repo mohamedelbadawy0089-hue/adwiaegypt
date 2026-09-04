@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الرفع الجماعي - نظام إدارة المخازن القومي</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="libs/xlsx.full.min.js"></script>
+    <script src="libs/supabase.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -312,6 +312,7 @@
 
         // أسماء الحقول المعروضة للمستخدم في القوائم المنسدلة
         const fieldDisplayNames = {
+            serial_number: 'رقم التسلسل (Serial)',
             batchNumber: 'التشغيلة (Batch)',
             tradeName: 'الصنف (Name)',
             quantity: 'الكمية (Qty)',
@@ -329,6 +330,7 @@
 
         // الكلمات المفتاحية للبحث في الأعمدة (محسنة وموسعة)
         const keywordMapping = {
+            serial_number: ['رقم التسلسل', 'Serial Number', 'Serial', 'تسلسل', 'م', 'رقم', 'serial', 'seq', 'sequence', 'رقم_التسلسل'],
             batchNumber: ['التشغيلة', 'رقم التشغيلة', 'Batch Number', 'Batch', 'تشميلة', 'batch', 'bno', 'رقم_التشغيلة', 'تشغيلة'],
             tradeName: ['الصنف', 'اسم الصنف', 'Product Name', 'Trade Name', 'اسم الدواء', 'product', 'item', 'drug', 'medicine', 'اسم_الصنف', 'دواء'],
             quantity: ['الكمية', 'Quantity', 'Qty', 'العدد', 'quantity', 'qty', 'amount', 'stock', 'عدد', 'كمية'],
@@ -345,12 +347,13 @@
         };
 
         // الترتيب الافتراضي للأعمدة (في حالة عدم وجود عناوين)
-        const defaultColumnOrder = ['batchNumber', 'tradeName', 'quantity', 'public_price', 'purchase_discount', 'sales_discount', 'production_date', 'expiry_date', 'category', 'supplier', 'invoice_date', 'invoice_number', 'supplier_invoice'];
+        const defaultColumnOrder = ['serial_number', 'batchNumber', 'tradeName', 'quantity', 'public_price', 'purchase_discount', 'sales_discount', 'production_date', 'expiry_date', 'category', 'supplier', 'invoice_date', 'invoice_number', 'supplier_invoice'];
 
         // الحقول القياسية الصغيرة المعتمدة لدى مخازن الأدوية (Small Sheet Fields)
         // خريطة الأعمدة الصاروخية (Direct Mapping From Small Sheet)
         const smallSheetFields = {
             // الحقول العربية والإنجليزية المختصرة
+            serial: ['رقم التسلسل', 'serial', 'تسلسل', 'م', 'رقم', 'seq'],
             batch: ['التشغيلة', 'batch', 'تشغيلة', 'bat', 'ب'],
             name: ['الصنف', 'name', 'منتج', 'product', 'اسم', 'ن'],
             qty: ['الكمية', 'qty', 'quantity', 'عدد', 'كمية', 'ك'],
@@ -368,6 +371,7 @@
 
         // الحقول البرمجية الموحدة لقاعدة البيانات (Direct Database Mapping)
         const dbFields = [
+            'serial_number',
             'batchNumber',
             'tradeName',
             'quantity',
@@ -546,16 +550,20 @@
             }
         }
 
-        // دالة تنظيف وتحويل البيانات مع خريطة المستخدم (Rocket Save)
+        // دالة تنظيف وتحويل البيانات مع خريطة المستخدم (Rocket Save) - مع الحفاظ الدقيق على الترتيب
         function cleanAndConvertDataWithUserMapping(rows, mapping) {
             const warehouseId = localStorage.getItem('warehouse_id');
             const result = [];
             let skippedCount = 0;
 
+            // معالجة الصفوف بالترتيب الأصلي تماماً كما في الإكسيل
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const data = {};
                 let isValid = false;
+
+                // حفظ الفهرس الأصلي للصف للحفاظ على الترتيب بدقة
+                data._originalRowIndex = row._originalRowIndex !== undefined ? row._originalRowIndex : i;
 
                 // حقن warehouse_id تلقائياً (Automated In-Memory Injection)
                 if (warehouseId) {
@@ -716,13 +724,13 @@
             }
         }
 
-        // دالة تحليل البيانات الملصوقة (سريعة جداً - بدون عمليات معقدة)
+        // دالة تحليل البيانات الملصوقة (سريعة جداً - مع الحفاظ الدقيق على الترتيب)
         function parsePastedDataFast(pastedText) {
             // تقسيم النص إلى صفوف باستخدام split فقط
             const lines = pastedText.split('\n');
             const rows = [];
 
-            // معالجة الصفوف بسرعة
+            // معالجة الصفوف بسرعة مع الحفاظ على الترتيب الأصلي
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
@@ -737,11 +745,14 @@
                     cells = line.split(/\s+/);
                 }
 
-                // تنظيف الخلايا بسرعة
+                // تنظيف الخلايا بسرعة مع الحفاظ على الترتيب
                 const trimmedCells = [];
                 for (let j = 0; j < cells.length; j++) {
                     trimmedCells.push(cells[j].trim());
                 }
+                
+                // إضافة فهرس الصف الأصلي للحفاظ على الترتيب بدقة
+                trimmedCells._originalRowIndex = i;
                 rows.push(trimmedCells);
             }
 
@@ -778,6 +789,7 @@
             // خريطة الأعمدة الصاروخية (Direct Mapping From Small Sheet)
             const fieldMap = {};
             const smallToDbMap = {
+                serial: 'serial_number',
                 batch: 'batchNumber',
                 name: 'tradeName',
                 qty: 'quantity',
@@ -855,6 +867,7 @@
             // خريطة الأعمدة الصاروخية (Direct Mapping From Small Sheet)
             const fieldMap = {};
             const smallToDbMap = {
+                serial: 'serial_number',
                 batch: 'batchNumber',
                 name: 'tradeName',
                 qty: 'quantity',
@@ -1008,74 +1021,121 @@
             return null;
         }
 
-        // دالة الرفع المتوازي السريع (محسنة - 1000 صنف في كل دفعة)
+        // دالة الرفع باستخدام RPC السيرفرية (دعم حتى 20,000 منتج في دفعة واحدة)
         async function uploadDataParallelOptimized(data, skippedCount = 0) {
-            const chunkSize = 1000;
-            const totalChunks = Math.ceil(data.length / chunkSize);
-            let uploadedCount = 0;
+            // التحقق من الحقول الإجبارية قبل الرفع
+            const requiredFields = [
+                { key: 'tradeName', name: 'الصنف' },
+                { key: 'public_price', name: 'السعر' },
+                { key: 'sales_discount', name: 'خصم البيع' }
+            ];
+
+            const invalidRows = [];
+            data.forEach(function(item, index) {
+                const productData = item.product_data || {};
+                requiredFields.forEach(function(field) {
+                    const value = productData[field.key];
+                    if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
+                        invalidRows.push({
+                            rowIndex: index + 1,
+                            fieldName: field.name,
+                            value: value
+                        });
+                    }
+                });
+            });
+
+            if (invalidRows.length > 0) {
+                const errorMessage = invalidRows.slice(0, 10).map(function(err) {
+                    return `الصف ${err.rowIndex}: ${err.fieldName} مفقود أو فارغ`;
+                }).join('\n');
+                
+                const moreMsg = invalidRows.length > 10 ? `\n... و ${invalidRows.length - 10} صف آخر` : '';
+                
+                throw new Error(`❌ الحقول الإجبارية مفقودة:\n\n${errorMessage}${moreMsg}\n\nيرجى التأكد من تعبئة: الصنف، السعر، وخصم البيع لجميع الصفوف.`);
+            }
 
             // التحقق من الاتصال بالشبكة قبل البدء
             if (!navigator.onLine) {
                 throw new Error('تعذر الاتصال بالسيرفر، يرجى مراجعة شبكة الإنترنت وإعادة المحاولة لحماية بيانات مخزنك');
             }
 
-            // تقسيم البيانات إلى مجموعات (سريع)
-            const chunks = [];
-            for (let i = 0; i < data.length; i += chunkSize) {
-                chunks.push(data.slice(i, i + chunkSize));
-            }
-
-            // رفع المجموعات بالتوازي (Promise.all للسرعة القصوى)
-            const uploadPromises = chunks.map(async (chunk, index) => {
-                try {
-                    const { error } = await supabase
-                        .from('drugs')
-                        .insert(chunk);
-
-                    if (error) throw error;
-
-                    uploadedCount += chunk.length;
-
-                    // تحديث شريط التقدم بنسبة مئوية سلسة
-                    const progress = Math.round((uploadedCount / data.length) * 100);
-                    document.getElementById('progressFill').style.width = progress + '%';
-                    document.getElementById('progressText').textContent = `تم معالجة ورفع ${uploadedCount.toLocaleString()} صنف من أصل ${data.length.toLocaleString()}... ${progress}%`;
-
-                    return { success: true, count: chunk.length };
-                } catch (error) {
-                    console.error(`خطأ في رفع المجموعة ${index + 1}:`, error);
-                    
-                    // التحقق من خطأ الشبكة
-                    if (error.message && (error.message.includes('network') || error.message.includes('connection') || error.message.includes('fetch'))) {
-                        throw new Error('تعذر الاتصال بالسيرفر، يرجى مراجعة شبكة الإنترنت وإعادة المحاولة لحماية بيانات مخزنك');
+            // تحضير البيانات للإرسال (استخراج product_data فقط وتنظيف القيم)
+            const productsArray = data.map(item => {
+                const productData = item.product_data || {};
+                
+                // تنظيف القيم غير الصالحة لـ JSON
+                Object.keys(productData).forEach(key => {
+                    if (productData[key] === undefined || productData[key] === null) {
+                        delete productData[key];
+                    } else if (typeof productData[key] === 'number' && isNaN(productData[key])) {
+                        productData[key] = 0;
                     }
-                    
-                    return { success: false, error: error.message };
-                }
+                });
+                
+                return productData;
             });
 
-            // انتظار انتهاء جميع عمليات الرفع
-            const results = await Promise.all(uploadPromises);
+            // الحصول على معرف المخزن
+            const warehouseId = data[0]?.warehouse_id || currentWarehouseId;
 
-            // التحقق من النتائج
-            const failedChunks = results.filter(r => !r.success);
-            if (failedChunks.length > 0) {
-                throw new Error(`فشل رفع ${failedChunks.length} من أصل ${totalChunks} مجموعة`);
+            console.log('💾 Sending productsArray to RPC:', productsArray.length, 'items');
+            console.log('💾 Sample product:', productsArray[0]);
+
+            // تحديث شريط التقدم
+            document.getElementById('progressFill').style.width = '10%';
+            document.getElementById('progressText').textContent = 'جاري معالجة البيانات...';
+
+            try {
+                // استدعاء RPC bulk_paste_warehouse_products_flexible
+                // الدالة تقوم بـ:
+                // 1. توليد sequence_number تلقائياً لكل منتج
+                // 2. تقسيم البيانات إلى دفعات 500 على السيرفر
+                // 3. ربط المنتجات بالمخزن المحدد
+                const { data: rpcResult, error: rpcError } = await supabase
+                    .rpc('bulk_paste_warehouse_products_flexible', {
+                        p_warehouse_id: warehouseId,
+                        p_products: productsArray
+                    });
+
+                if (rpcError) {
+                    console.error('❌ RPC error:', rpcError);
+                    throw new Error(rpcError.message);
+                }
+
+                if (rpcResult && rpcResult.length > 0) {
+                    const result = rpcResult[0];
+                    const uploadedCount = result.inserted || 0;
+                    
+                    // تحديث شريط التقدم
+                    document.getElementById('progressFill').style.width = '100%';
+                    document.getElementById('progressText').textContent = `تم معالجة ورفع ${uploadedCount.toLocaleString()} صنف من أصل ${data.length.toLocaleString()}... 100%`;
+
+                    // إظهار رسالة النجاح مع تفاصيل الصفوف المتخطاة
+                    document.getElementById('progressSection').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    let successMessage = `تم رفع وتأمين ${uploadedCount.toLocaleString()} صنف بنجاح في حساب مستودعك بالترتيب الأصلي`;
+                    if (skippedCount > 0) {
+                        successMessage += `، وتم تخطي ${skippedCount.toLocaleString()} صف غير مطابق للشروط`;
+                    }
+                    document.getElementById('successText').textContent = successMessage;
+
+                    // إعادة تعيين النموذج
+                    document.getElementById('pasteTextarea').value = '';
+                    uploadedData = [];
+                }
+
+            } catch (error) {
+                console.error('❌ Error during bulk upload:', error);
+                
+                // التحقق من خطأ الشبكة
+                if (error.message && (error.message.includes('network') || error.message.includes('connection') || error.message.includes('fetch'))) {
+                    throw new Error('تعذر الاتصال بالسيرفر، يرجى مراجعة شبكة الإنترنت وإعادة المحاولة لحماية بيانات مخزنك');
+                }
+                
+                throw new Error(`فشل الرفع: ${error.message}`);
             }
-
-            // إظهار رسالة النجاح مع تفاصيل الصفوف المتخطاة
-            document.getElementById('progressSection').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'block';
-            
-            let successMessage = `تم رفع وتأمين ${uploadedCount.toLocaleString()} صنف بنجاح في حساب مستودعك`;
-            if (skippedCount > 0) {
-                successMessage += `، وتم تخطي ${skippedCount.toLocaleString()} صف غير مطابق للشروط`;
-            }
-            document.getElementById('successText').textContent = successMessage;
-
-            // إعادة تعيين النموذج
-            document.getElementById('pasteTextarea').value = '';
-            uploadedData = [];
         }
 
         // دالة معالجة رفع الملف
@@ -1175,7 +1235,7 @@
             }).filter(row => Object.keys(row).length > 0); // تصفية الصفوف الفارغة
         }
 
-        // دالة عرض المعاينة
+        // دالة عرض المعاينة - مع الحفاظ الدقيق على الترتيب الأصلي
         function showPreview(data, headers) {
             const previewTable = document.getElementById('previewTable');
             previewTable.innerHTML = '';
@@ -1189,10 +1249,13 @@
             });
             previewTable.appendChild(headerRow);
             
-            // إضافة صفوف البيانات
-            data.forEach(row => {
+            // إضافة صفوف البيانات بالترتيب الأصلي تماماً
+            data.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                headers.forEach((header, index) => {
+                // إضافة فهرس الصف الأصلي كسمة للتحقق
+                tr.setAttribute('data-original-index', row._originalRowIndex !== undefined ? row._originalRowIndex : index);
+                
+                headers.forEach((header, headerIndex) => {
                     const td = document.createElement('td');
                     td.textContent = row[header] || '-';
                     tr.appendChild(td);
@@ -1203,7 +1266,7 @@
             document.getElementById('previewSection').style.display = 'block';
         }
 
-        // دالة تأكيد الرفع
+        // دالة تأكيد الرفع - باستخدام RPC السيرفرية
         async function confirmUpload() {
             document.getElementById('previewSection').style.display = 'none';
             document.getElementById('progressSection').style.display = 'block';
@@ -1211,38 +1274,95 @@
             document.getElementById('progressText').textContent = 'جاري رفع البيانات...';
 
             try {
+                // التحقق من الحقول الإجبارية قبل الرفع
+                const requiredFields = [
+                    { key: 'tradeName', name: 'الصنف' },
+                    { key: 'public_price', name: 'السعر' },
+                    { key: 'sales_discount', name: 'خصم البيع' }
+                ];
+
+                const invalidRows = [];
+                uploadedData.forEach(function(item, index) {
+                    const productData = item.product_data || {};
+                    requiredFields.forEach(function(field) {
+                        const value = productData[field.key];
+                        if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
+                            invalidRows.push({
+                                rowIndex: index + 1,
+                                fieldName: field.name,
+                                value: value
+                            });
+                        }
+                    });
+                });
+
+                if (invalidRows.length > 0) {
+                    const errorMessage = invalidRows.slice(0, 10).map(function(err) {
+                        return `الصف ${err.rowIndex}: ${err.fieldName} مفقود أو فارغ`;
+                    }).join('\n');
+                    
+                    const moreMsg = invalidRows.length > 10 ? `\n... و ${invalidRows.length - 10} صف آخر` : '';
+                    
+                    throw new Error(`❌ الحقول الإجبارية مفقودة:\n\n${errorMessage}${moreMsg}\n\nيرجى التأكد من تعبئة: الصنف، السعر، وخصم البيع لجميع الصفوف.`);
+                }
+
                 // التحقق من الاتصال بالشبكة
                 if (!navigator.onLine) {
                     throw new Error('لا يوجد اتصال بالشبكة');
                 }
 
-                // رفع البيانات إلى Supabase
-                const batchSize = 100;
-                const totalBatches = Math.ceil(uploadedData.length / batchSize);
-                
-                for (let i = 0; i < uploadedData.length; i += batchSize) {
-                    const batch = uploadedData.slice(i, i + batchSize);
-                    const { error } = await supabase
-                        .from('drugs')
-                        .insert(batch);
+                // تحضير البيانات للإرسال (استخراج product_data فقط وتنظيف القيم)
+                const productsArray = uploadedData.map(item => {
+                    const productData = item.product_data || {};
                     
-                    if (error) throw error;
+                    // تنظيف القيم غير الصالحة لـ JSON
+                    Object.keys(productData).forEach(key => {
+                        if (productData[key] === undefined || productData[key] === null) {
+                            delete productData[key];
+                        } else if (typeof productData[key] === 'number' && isNaN(productData[key])) {
+                            productData[key] = 0;
+                        }
+                    });
                     
-                    // تحديث شريط التقدم
-                    const progress = Math.min(100, Math.round(((i + batchSize) / uploadedData.length) * 100));
-                    document.getElementById('progressFill').style.width = progress + '%';
-                    document.getElementById('progressText').textContent = 'تم رفع ' + (i + batch.length) + ' من ' + uploadedData.length + ' صنف';
+                    return productData;
+                });
+
+                // الحصول على معرف المخزن
+                const warehouseId = uploadedData[0]?.warehouse_id || currentWarehouseId;
+
+                console.log('💾 Sending productsArray to RPC:', productsArray.length, 'items');
+                console.log('💾 Sample product:', productsArray[0]);
+
+                // استدعاء RPC bulk_paste_warehouse_products_flexible
+                const { data: rpcResult, error: rpcError } = await supabase
+                    .rpc('bulk_paste_warehouse_products_flexible', {
+                        p_warehouse_id: warehouseId,
+                        p_products: productsArray
+                    });
+
+                if (rpcError) {
+                    console.error('❌ RPC error:', rpcError);
+                    throw new Error(rpcError.message);
                 }
 
-                // إظهار رسالة النجاح
-                document.getElementById('progressSection').style.display = 'none';
-                document.getElementById('successMessage').style.display = 'block';
-                document.getElementById('successText').textContent = 'تم رفع وتأمين ' + uploadedData.length + ' صنف بنجاح في حساب مستودعك';
-                
-                // إعادة تعيين النموذج
-                document.getElementById('fileInput').value = '';
-                uploadedData = [];
-                
+                if (rpcResult && rpcResult.length > 0) {
+                    const result = rpcResult[0];
+                    const uploadedCount = result.inserted || 0;
+                    
+                    // تحديث شريط التقدم
+                    document.getElementById('progressFill').style.width = '100%';
+                    document.getElementById('progressText').textContent = `تم رفع ${uploadedCount.toLocaleString()} صنف من أصل ${uploadedData.length.toLocaleString()}... 100%`;
+
+                    // إظهار رسالة النجاح
+                    document.getElementById('progressSection').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('successText').textContent = `تم رفع وتأمين ${uploadedCount.toLocaleString()} صنف بنجاح بالترتيب الأصلي`;
+                    
+                    // إعادة تعيين النموذج
+                    document.getElementById('fileInput').value = '';
+                    uploadedData = [];
+                }
+
             } catch (error) {
                 console.error('خطأ في الرفع:', error);
                 document.getElementById('progressSection').style.display = 'none';

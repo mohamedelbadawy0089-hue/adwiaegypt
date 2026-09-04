@@ -7,15 +7,12 @@
 <!-- Critical CSS - Inline for fastest render -->
 <style>body{margin:0;padding:0;background:#f8f9fa;color:#000;font-family:Arial,sans-serif}header{background:#28a745;color:#fff;padding:20px;text-align:center}.container{max-width:500px;margin:50px auto;padding:30px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}.btn{display:inline-block;padding:15px 30px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;font-size:16px;margin:10px;width:100%}.btn-success{background:#28a745;color:#fff}.btn-secondary{background:#6c757d;color:#fff}.field{margin-bottom:20px;text-align:right}label{display:block;margin-bottom:10px;font-weight:bold}input[type="text"],input[type="password"],input[type="email"],select{width:100%;padding:12px;border:2px solid #28a745;border-radius:6px;box-sizing:border-box;font-size:16px}h1{margin:0;font-size:24px}</style>
 <!-- Preload Critical Resources -->
-<link rel="preload" href="non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<link rel="preload" href="bundle.js" as="script">
 <script src="navigation.js"></script>
 <!-- DNS Prefetch -->
 <link rel="dns-prefetch" href="//supabase.co">
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <!-- Preconnect -->
 <link rel="preconnect" href="https://slamtak.supabase.co">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
 <!-- GZip Compression Headers -->
 <meta http-equiv="Content-Encoding" content="gzip">
 </head>
@@ -86,7 +83,7 @@
 <button class="btn btn-secondary" onclick="window.location.href='warehouse-login.html'">لدي حساب بالفعل</button>
 </div>
 <!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="libs/supabase.min.js"></script>
 <!-- Multi-Tenant Module -->
 <script src="supabase-multi-tenant.js"></script>
 <!-- Bundled JS -->

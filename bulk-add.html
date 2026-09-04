@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إدخال جماعي للمنتجات - سلامتك</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="libs/cairo.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #667eea;
@@ -372,7 +372,7 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="libs/xlsx.full.min.js"></script>
     <script>
         const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
         if (!currentUser) if(typeof window.showOfflineToast === 'function') window.showOfflineToast();
@@ -737,7 +737,7 @@
     </script>
     <script src="ai-core.js"></script>
     <script src="navigation.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="libs/supabase.min.js"></script>
     <script src="supabase-config.js"></script>
     <script src="ai-speech.js"></script>
     <script src="ai-database.js"></script>

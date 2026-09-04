@@ -7,15 +7,11 @@
 <!-- Critical CSS - Inline for fastest render -->
 <style>body{margin:0;padding:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}.form-container{background:rgba(255,255,255,0.95);border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,0.1);padding:40px;margin-top:50px;backdrop-filter:blur(10px)}.form-header{text-align:center;margin-bottom:40px;color:#333}.form-header h1{font-size:2.5rem;font-weight:bold;margin-bottom:10px;background:linear-gradient(45deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.form-group{margin-bottom:25px}.form-label{font-weight:600;color:#555;margin-bottom:8px;display:block}.form-control{border:2px solid #e0e0e0;border-radius:10px;padding:12px 15px;font-size:16px;transition:all 0.3s ease}.form-control:focus{border-color:#667eea;box-shadow:0 0 0 0.2rem rgba(102,126,234,0.25)}.btn-primary{background:linear-gradient(45deg,#667eea,#764ba2);border:none;border-radius:10px;padding:15px;font-size:18px;font-weight:600;color:white;transition:all 0.3s ease;width:100%}.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(102,126,234,0.3)}.btn-secondary{background:#6c757d;border:none;border-radius:10px;padding:15px;font-size:18px;font-weight:600;color:white;transition:all 0.3s ease;width:100%;margin-top:10px}.voice-btn{background:linear-gradient(45deg,#28a745,#20c997);border:none;border-radius:10px;padding:15px;font-size:18px;font-weight:600;color:white;transition:all 0.3s ease;width:100%;margin-top:20px}.voice-btn:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(40,167,69,0.3)}.voice-btn.listening{background:linear-gradient(45deg,#dc3545,#c82333);animation:pulse 1.5s infinite}@keyframes pulse{0%{opacity:1}50%{opacity:0.7}100%{opacity:1}}.date-inputs{display:flex;gap:10px}.date-inputs .form-control{flex:1}.alert{border-radius:10px;margin-top:20px}</style>
 <!-- Preload Critical Resources -->
-<link rel="preload" href="non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<link rel="preload" href="voice-input.js" as="script">
-<link rel="preload" href="bundle.js" as="script">
 <!-- DNS Prefetch -->
 <link rel="dns-prefetch" href="//supabase.co">
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <!-- Preconnect -->
 <link rel="preconnect" href="https://iksjhjxwphmvthryfeae.supabase.co">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
 </head>
 <body>
 <div class="container">
@@ -103,7 +99,7 @@
 </div>
 
 <!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="libs/supabase.min.js"></script>
 <!-- Supabase Singleton Module -->
 <script src="supabase-singleton.js"></script>
 <!-- Voice Input System -->

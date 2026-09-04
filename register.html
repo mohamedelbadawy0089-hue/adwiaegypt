@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل مخزن</title>
     <script src="navigation.js"></script>
-    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="libs/dexie.js"></script>
+    <script src="libs/supabase.min.js"></script>
     <style>
         body {
             display: flex;
@@ -330,14 +330,18 @@
         }
         
         function saveUser(userData, callback) {
-            // حفظ المستخدم في Supabase للحصول على UUID
+            // حفظ المستخدم في Supabase مع الأعمدة الصحيحة
             supabaseClient
                 .from('warehouses')
                 .insert([{
-                    name: userData.name,
+                    warehouse_name: userData.warehouseName || userData.name || 'مخزن جديد',
                     email: userData.email,
-                    phone: userData.phone,
+                    phone_number: userData.phone,
                     governorate: userData.governorate,
+                    admin_key: userData.password || 'admin123',
+                    // الأعمدة القديمة للتوافق
+                    name: userData.warehouseName || userData.name,
+                    phone: userData.phone,
                     password: userData.password,
                     created_at: new Date().toISOString()
                 }])
@@ -375,6 +379,7 @@
                     }
                 });
         }
+
         
         // تهيئة قاعدة البيانات عند تحميل الصفحة
         initDB();

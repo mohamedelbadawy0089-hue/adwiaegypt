@@ -7,18 +7,13 @@
 <!-- Critical CSS - Inline for fastest render -->
 <style>body{margin:0;padding:0;background:#f8f9fa;min-height:100vh;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#2c3e50}.form-container{background:rgba(255,255,255,0.98);border-radius:25px;box-shadow:0 25px 60px rgba(0,0,0,0.15),0 0 0 1px rgba(255,255,255,0.8);padding:50px;margin-top:30px;margin-bottom:30px;min-height:calc(100vh - 100px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.2)}.form-header{text-align:center;margin-bottom:60px;color:#2c3e50;border-bottom:2px solid #e1e8ed;padding-bottom:30px}.form-header h1{font-size:2.8rem;font-weight:700;margin-bottom:15px;background:linear-gradient(135deg,#3498db,#2c3e50);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 2px 4px rgba(0,0,0,0.1)}.form-group{margin-bottom:40px;padding:20px;border-radius:15px;background:linear-gradient(135deg,rgba(255,255,255,0.8),rgba(248,249,250,0.6));border:1px solid rgba(225,232,237,0.5);transition:all 0.3s cubic-bezier(0.4,0,0.2,1);position:relative}.form-group:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,0.08);border-color:rgba(52,152,219,0.2)}.form-label{font-weight:600;color:#34495e;margin-bottom:12px;display:block;font-size:16px;letter-spacing:0.5px}.form-control{border:2px solid #e1e8ed;border-radius:12px;padding:16px 20px;font-size:16px;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);background:#f8f9fa}.form-control:focus{border-color:#3498db;box-shadow:0 0 0 3px rgba(52,152,219,0.1),0 4px 12px rgba(0,0,0,0.1);background:#ffffff;transform:translateY(-1px)}.btn-primary{background:linear-gradient(135deg,#3498db,#2980b9);border:none;border-radius:12px;padding:18px;font-size:18px;font-weight:600;color:white;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);width:100%;box-shadow:0 4px 15px rgba(52,152,219,0.3);position:relative;overflow:hidden}.btn-primary:before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:all 0.5s}.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(52,152,219,0.4)}.btn-primary:hover:before{left:100%}.btn-primary:active{transform:translateY(0);box-shadow:0 2px 10px rgba(52,152,219,0.3)}.btn-secondary{background:#f8f9fa;border:2px solid #e1e8ed;border-radius:12px;padding:18px;font-size:18px;font-weight:600;color:#6c757d;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);width:100%;margin-top:20px}.btn-secondary:hover{background:#e9ecef;border-color:#adb5bd;color:#495057;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}.voice-btn{background:linear-gradient(135deg,#27ae60,#2ecc71);border:none;border-radius:12px;padding:18px;font-size:18px;font-weight:600;color:white;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);width:100%;margin-top:30px;box-shadow:0 4px 15px rgba(39,174,96,0.3);position:relative;overflow:hidden}.voice-btn:before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:all 0.5s}.voice-btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(39,174,96,0.4)}.voice-btn:hover:before{left:100%}.voice-btn:active{transform:translateY(0);box-shadow:0 2px 10px rgba(39,174,96,0.3)}.voice-btn.listening{background:linear-gradient(45deg,#dc3545,#c82333);animation:pulse 1.5s infinite}@keyframes pulse{0%{opacity:1}50%{opacity:0.7}100%{opacity:1}}.date-inputs{display:flex;gap:12px}.date-inputs .form-control{flex:1;border-radius:10px}.alert{border-radius:12px;margin-top:25px;padding:15px 20px;border:none;font-weight:500;letter-spacing:0.3px}.row{display:flex;flex-wrap:wrap;margin-right:-15px;margin-left:-15px}.col-md-6{position:relative;width:100%;padding-right:15px;padding-left:15px}.col-md-8{position:relative;width:100%;padding-right:15px;padding-left:15px}.col-lg-6{position:relative;width:100%;padding-right:15px;padding-left:15px}@media (min-width:768px){.col-md-6{flex:0 0 50%;max-width:50%}.col-md-8{flex:0 0 66.666667%;max-width:66.666667%}}@media (min-width:992px){.col-lg-6{flex:0 0 50%;max-width:50%}}.container{width:100%;padding-right:15px;padding-left:15px;margin-right:auto;margin-left:auto}@media (min-width:576px){.container{max-width:540px}}@media (min-width:768px){.container{max-width:720px}}@media (min-width:992px){.container{max-width:960px}}@media (min-width:1200px){.container{max-width:1140px}}.justify-content-center{justify-content:center!important}</style>
 <!-- Preload Critical Resources -->
-<link rel="preload" href="non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<link rel="preload" href="voice-input.js" as="script">
-<link rel="preload" href="bundle.js" as="script">
-<link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script">
+<link rel="preload" href="libs/supabase.min.js" as="script">
 <!-- DNS Prefetch -->
 <link rel="dns-prefetch" href="//supabase.co">
 <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
 <!-- Preconnect -->
 <link rel="preconnect" href="https://iksjhjxwphmvthryfeae.supabase.co">
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
 </head>
 <body>
 <div class="container">
@@ -106,9 +101,9 @@
 </div>
 
 <!-- Font Awesome for Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="libs/font-awesome.min.css">
 <!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="libs/supabase.min.js"></script>
 <!-- Supabase Singleton Module -->
 <script src="supabase-singleton.js"></script>
 <!-- Voice Input System -->
